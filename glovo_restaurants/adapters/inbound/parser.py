@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from ...domain.models import SORT_OPTIONS
+from ...domain import SORT_OPTIONS
 from ..outbound.config import get_settings
 
 def _sort_by(value: str) -> str:

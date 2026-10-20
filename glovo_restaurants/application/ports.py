@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping, Protocol, Sequence, runtime_checkable
 
-from ..domain.models import Restaurant
+from ..domain import Restaurant
 
 
 @runtime_checkable

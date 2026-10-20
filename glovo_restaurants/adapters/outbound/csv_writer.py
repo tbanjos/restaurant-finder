@@ -6,7 +6,7 @@ import csv
 from collections.abc import Sequence
 from pathlib import Path
 
-from ...domain.models import Restaurant
+from ...domain import Restaurant
 
 FIELDS = [
     "name",

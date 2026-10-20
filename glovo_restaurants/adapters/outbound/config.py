@@ -19,7 +19,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Mapping
 
-from ...domain.models import SORT_OPTIONS
+from ...domain import SORT_OPTIONS
 
 
 class ConfigurationError(RuntimeError):

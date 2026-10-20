@@ -43,11 +43,10 @@ HTTP, configuration, and file output.
 
 | File | Responsibility |
 | --- | --- |
-| `glovo_restaurants/domain/models/` | Domain models: `Restaurant`, ranking options, parsing helpers, and ranking. |
-| `glovo_restaurants/domain/models/restaurant.py` | `Restaurant` entity and API-to-model mapping. |
-| `glovo_restaurants/domain/models/options.py` | Supported ranking option constants. |
-| `glovo_restaurants/domain/models/parsing.py` | Rating, votes, distance, and ETA parsing helpers. |
-| `glovo_restaurants/domain/models/ranking.py` | `sort_restaurants` ranking strategies. |
+| `glovo_restaurants/domain/restaurant.py` | `Restaurant` entity and API-to-model mapping. |
+| `glovo_restaurants/domain/helper/options.py` | Supported ranking option constants. |
+| `glovo_restaurants/domain/helper/parsing.py` | Rating, votes, distance, and ETA parsing helpers. |
+| `glovo_restaurants/domain/helper/ranking.py` | `sort_restaurants` ranking strategies. |
 | `glovo_restaurants/domain/errors.py` | Domain/API error hierarchy. |
 | `glovo_restaurants/application/ports.py` | `RestaurantProvider` and `RestaurantWriter` protocols. |
 | `glovo_restaurants/application/use_cases.py` | `SearchRestaurants` and `ListCuisines` use cases. |
@@ -109,7 +108,7 @@ contract narrow makes stages easy to test and reorder.
 
 ## Ranking
 
-`domain.models.sort_restaurants` supports three strategies:
+`domain.helper.sort_restaurants` supports three strategies:
 
 | `sort_by` | Ordering |
 | --- | --- |

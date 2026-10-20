@@ -5,7 +5,7 @@ from .domain.errors import (
     CuisineNotFoundError,
     GlovoError,
 )
-from .domain.models import (
+from .domain import (
     SORT_OPTIONS,
     Restaurant,
     parse_distance,

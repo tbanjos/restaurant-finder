@@ -20,7 +20,7 @@ from ...domain.errors import (
     CuisineNotFoundError,
     GlovoError,
 )
-from ...domain.models import Restaurant
+from ...domain import Restaurant
 from .config import Settings, get_settings
 
 

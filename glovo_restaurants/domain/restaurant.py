@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from .parsing import parse_distance, parse_eta, parse_rating, parse_votes
+from .helper.parsing import parse_distance, parse_eta, parse_rating, parse_votes
 
 
 @dataclass(frozen=True)

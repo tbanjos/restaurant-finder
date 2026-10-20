@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from .options import DEFAULT_SORT, SORT_OPTIONS
-from .restaurant import Restaurant
+from ..restaurant import Restaurant
 
 
 def sort_restaurants(

@@ -1,4 +1,4 @@
-"""Domain models and ranking helpers for Glovo store data."""
+"""Domain helpers for ranking and parsing Glovo display values."""
 
 from .options import (
     DEFAULT_SORT,
@@ -14,11 +14,9 @@ from .parsing import (
     parse_votes,
 )
 from .ranking import sort_restaurants
-from .restaurant import Restaurant
 
 __all__ = [
     "DEFAULT_SORT",
-    "Restaurant",
     "SORT_DELIVERY_TIME",
     "SORT_DISTANCE",
     "SORT_OPTIONS",

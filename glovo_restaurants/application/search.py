@@ -15,7 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from ..domain.models import DEFAULT_SORT, Restaurant, sort_restaurants
+from ..domain import DEFAULT_SORT, Restaurant, sort_restaurants
 from .pipeline import Pipeline
 
 if TYPE_CHECKING:
