@@ -1,8 +1,8 @@
 # Glovo Restaurant Finder
 
 Find open restaurants on [Glovo](https://glovoapp.com/en/es/barcelona) for a
-given cuisine and delivery address, rank them by rating, and write the results
-to a CSV file.
+given cuisine and delivery address, rank them closest first by default (or by
+rating or delivery time), and write the results to a CSV file.
 
 By default the script:
 
@@ -10,7 +10,7 @@ By default the script:
 2. Loads the list of food types Glovo exposes for that city.
 3. Finds the food type matching the requested cuisine.
 4. Fetches every open restaurant in that food type, sorted by rating.
-5. Re-ranks them by rating (then by number of votes, then by name).
+5. Re-ranks them closest first (or by rating/delivery time).
 6. Writes the top 30 to a CSV file.
 
 ## Install
@@ -33,8 +33,14 @@ pip install -e .
 # Top 30 Italian restaurants in Barcelona -> restaurants.csv
 python -m glovo_restaurants --cuisine italian
 
-# Restaurants near a specific delivery address
+# Restaurants near a specific delivery address, closest first
 python -m glovo_restaurants --cuisine italian --address "Carrer de Casp 111"
+
+# Rank by rating instead
+python -m glovo_restaurants --cuisine italian --sort-by rating
+
+# Rank by fastest delivery estimate
+python -m glovo_restaurants --cuisine italian --sort-by delivery-time
 
 # A different city (the city code can also be supplied explicitly)
 python -m glovo_restaurants --cuisine sushi --city madrid --city-code mad
@@ -63,6 +69,10 @@ default). When it is supplied, the address is resolved through Glovo's address
 lookup and the delivery location is sent with every request. Only restaurants
 whose availability status is `OPEN` are included in the output.
 
+Results are ranked closest first by default. Use `--sort-by rating` or
+`--sort-by delivery-time` (also accepted as `--rank-by`) to change the ranking.
+Delivery time uses the midpoint of Glovo's ETA range.
+
 ## Output
 
 The CSV is UTF-8 with a BOM so it opens correctly in Excel:
@@ -85,6 +95,17 @@ name,rating_percent,votes,cuisine,eta,distance,delivery_fee,url
 Spaccanapoli Balmes,100,165,Italian,30-40 min,<100m,Free,https://glovoapp.com/en/es/barcelona/stores/spaccanapoli-balmes-barcelona
 Chicago's Pizza Factory,100,109,Italian,30-40 min,<100m,Free,https://glovoapp.com/en/es/barcelona/stores/chicagos-pizza-factory-barcelona
 ```
+
+## Architecture
+
+The restaurant lookup is a composable pipeline. `GlovoClient` handles HTTP and
+pagination; the stages in `glovo_restaurants/search.py` resolve the cuisine,
+fetch entries, keep open stores, map them to `Restaurant` objects, rank them,
+and apply the limit. New behaviour should normally be added as a pipeline stage.
+
+See [docs/architecture.md](docs/architecture.md) for the module map, stage
+reference, extension guide, API assumptions, troubleshooting, and maintenance
+checklist.
 
 ## Tests
 

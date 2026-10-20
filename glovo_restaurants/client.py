@@ -1,3 +1,9 @@
+"""HTTP transport for Glovo's web endpoints.
+
+This module owns request headers, address resolution, pagination, and response
+validation. Search orchestration lives in :mod:`glovo_restaurants.search`.
+"""
+
 from __future__ import annotations
 
 import re
@@ -8,7 +14,9 @@ from typing import Any
 
 import requests
 
-from .models import Restaurant, sort_restaurants
+from .models import DEFAULT_SORT, Restaurant
+from .pipeline import Pipeline
+from .search import SearchContext, build_search_pipeline
 
 API_URL = "https://api.glovoapp.com/v1/web/store_wall/category/1"
 ADDRESS_LOOKUP_URL = "https://api.glovoapp.com/v3/addresslookup/pub/address"
@@ -32,12 +40,6 @@ class AddressNotFoundError(GlovoError):
 
 def _normalize(value: str) -> str:
     return re.sub(r"[^a-z0-9]", "", value.casefold())
-
-
-def _is_open(entry: dict[str, Any]) -> bool:
-    """Return whether a store listing is currently open for orders."""
-    status = (entry.get("availability") or {}).get("status")
-    return status is None or str(status).upper() == "OPEN"
 
 
 class GlovoClient:
@@ -65,6 +67,7 @@ class GlovoClient:
         self._client_id = str(uuid.uuid4())
         self._cuisines: dict[str, tuple[str, str]] | None = None
         self._location_resolved = False
+        self.search_pipeline: Pipeline[SearchContext] = build_search_pipeline()
 
     def _headers(self) -> dict[str, str]:
         now = str(int(time.time() * 1000))
@@ -217,13 +220,15 @@ class GlovoClient:
             f"Unknown cuisine '{query}'. Use --list-cuisines to see the options."
         )
 
-    def fetch_restaurants(self, cuisine: str, *, limit: int | None = 30) -> list[Restaurant]:
-        _, filter_id = self.resolve_cuisine(cuisine)
-        filters = [
-            {"filterId": "ADMIN_FILTERS", "filterAttributeIds": [filter_id]},
-            {"filterId": "SORT_BY", "filterAttributeIds": ["RATING"]},
-        ]
+    def fetch_store_entries(
+        self, filters: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        """Fetch every store entry matching ``filters``.
 
+        Glovo paginates the store wall and may repeat entries between pages, so
+        this method deduplicates by store id. Availability filtering belongs to
+        the search pipeline, not to this transport-level helper.
+        """
         entries: list[dict[str, Any]] = []
         seen: set[str] = set()
         seen_order: list[str] = []
@@ -251,22 +256,33 @@ class GlovoClient:
                 store_id = str(entry.get("id"))
                 seen.add(store_id)
                 seen_order.append(store_id)
-                if _is_open(entry):
-                    entries.append(entry)
+                entries.append(entry)
 
             offset += len(batch)
 
-        restaurants = [
-            Restaurant.from_api(
-                entry,
-                city=self.city_name,
-                country=self.country_code,
-                language=self.language,
-            )
-            for entry in entries
-        ]
-        ranked = sort_restaurants(restaurants)
-        return ranked[:limit] if limit is not None else ranked
+        return entries
+
+    def fetch_restaurants(
+        self,
+        cuisine: str,
+        *,
+        limit: int | None = 30,
+        sort_by: str = DEFAULT_SORT,
+    ) -> list[Restaurant]:
+        """Return ranked open restaurants for ``cuisine``.
+
+        ``sort_by`` accepts ``distance`` (default), ``rating``, or
+        ``delivery_time``. Orchestration lives in
+        ``search.build_search_pipeline``; this method is only the stable public
+        entry point for callers.
+        """
+        context = SearchContext(
+            client=self,
+            cuisine=cuisine,
+            limit=limit,
+            sort_by=sort_by,
+        )
+        return self.search_pipeline.run(context).restaurants
 
     def cuisine_names(self) -> list[str]:
         return sorted(name for name, _ in self.cuisines().values())

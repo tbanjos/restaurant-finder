@@ -1,3 +1,5 @@
+"""Command-line interface and CSV rendering for Glovo restaurant searches."""
+
 from __future__ import annotations
 
 import argparse
@@ -6,7 +8,7 @@ import sys
 from pathlib import Path
 
 from .client import CuisineNotFoundError, GlovoClient, GlovoError
-from .models import Restaurant
+from .models import DEFAULT_SORT, SORT_OPTIONS, Restaurant
 
 FIELDS = [
     "name",
@@ -26,7 +28,19 @@ def _rating_value(rating: float | None) -> str | int:
     return int(rating) if rating.is_integer() else rating
 
 
+def _sort_by(value: str) -> str:
+    """Normalize a CLI sort option to its internal name."""
+    option = value.casefold().replace("-", "_")
+    if option not in SORT_OPTIONS:
+        choices = ", ".join(item.replace("_", "-") for item in SORT_OPTIONS)
+        raise argparse.ArgumentTypeError(
+            f"invalid sort option '{value}' (choose from: {choices})"
+        )
+    return option
+
+
 def write_csv(restaurants: list[Restaurant], output: Path) -> None:
+    """Write ``restaurants`` to ``output`` as a UTF-8 CSV with a BOM."""
     with output.open("w", encoding="utf-8-sig", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=FIELDS)
         writer.writeheader()
@@ -46,11 +60,13 @@ def write_csv(restaurants: list[Restaurant], output: Path) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the CLI argument parser."""
     parser = argparse.ArgumentParser(
         prog="glovo-restaurants",
         description=(
             "Find open Glovo restaurants for a cuisine at a delivery address, "
-            "rank them by rating, and write the results to a CSV file."
+            "rank them closest first by default, and write the results to a "
+            "CSV file."
         ),
     )
     parser.add_argument(
@@ -65,6 +81,18 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Delivery address used to filter restaurants, for example "
             '"Carrer de Casp 111". Defaults to the city center.'
+        ),
+    )
+    parser.add_argument(
+        "--sort-by",
+        "--rank-by",
+        dest="sort_by",
+        type=_sort_by,
+        default=DEFAULT_SORT,
+        metavar="{distance,rating,delivery-time}",
+        help=(
+            "Ranking strategy: closest first (default), highest rated, or "
+            "fastest delivery."
         ),
     )
     parser.add_argument(
@@ -100,6 +128,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the CLI and return a process exit code."""
     parser = build_parser()
     args = parser.parse_args(argv)
 
@@ -120,7 +149,11 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         print(f"Fetching {args.cuisine!r} restaurants from Glovo...", file=sys.stderr)
-        restaurants = client.fetch_restaurants(args.cuisine, limit=args.limit)
+        restaurants = client.fetch_restaurants(
+            args.cuisine,
+            limit=args.limit,
+            sort_by=args.sort_by,
+        )
         if not restaurants:
             print("No restaurants found.", file=sys.stderr)
             return 1

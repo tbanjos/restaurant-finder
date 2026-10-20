@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "glovo-restaurants"
 version = "0.1.0"
-description = "Find Glovo restaurants by cuisine in Barcelona and export them ranked by rating."
+description = "Find open Glovo restaurants by cuisine and delivery address, ranked by distance, rating, or delivery time."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = ["requests>=2.31,<3"]
