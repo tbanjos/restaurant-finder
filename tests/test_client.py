@@ -114,6 +114,10 @@ class AddressLookupTests(unittest.TestCase):
         self.assertEqual(headers["glovo-delivery-location-latitude"], "41.3961889")
         self.assertEqual(headers["glovo-delivery-location-longitude"], "2.1796525")
         self.assertEqual(headers["glovo-location-city-code"], "bcn")
+        self.assertEqual(client.location.city_code, "bcn")
+        self.assertEqual(client.location.latitude, 41.3961889)
+        self.assertEqual(client.location.longitude, 2.1796525)
+        self.assertTrue(client.location.has_coordinates)
         self.assertIn("Carrer de Casp 111, barcelona", client.session.get_calls[0][1]["params"]["address"])
 
     def test_missing_address_raises(self):

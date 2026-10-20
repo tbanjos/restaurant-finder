@@ -12,13 +12,13 @@ class BuildRestaurantsStep:
     name = "build-restaurants"
 
     def run(self, context: SearchContext) -> None:
-        client = context.client
+        location = context.client.location
         context.restaurants = [
             Restaurant.from_api(
                 entry,
-                city=client.city_name,
-                country=client.country_code,
-                language=client.language,
+                city=location.city_name,
+                country=location.country_code,
+                language=location.language,
             )
             for entry in context.entries
         ]

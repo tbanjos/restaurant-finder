@@ -1,6 +1,7 @@
 import unittest
 
 from glovo_restaurants.application.pipeline import Pipeline
+from glovo_restaurants.domain import Location
 from glovo_restaurants.application.search import build_search_pipeline
 from glovo_restaurants.application.search_context import SearchContext
 from glovo_restaurants.application.steps import store_is_open
@@ -36,9 +37,12 @@ class PipelineTests(unittest.TestCase):
 
 
 class _FakeClient:
-    city_name = "barcelona"
-    country_code = "es"
-    language = "en"
+    location = Location(
+        city_code="bcn",
+        city_name="barcelona",
+        country_code="es",
+        language="en",
+    )
 
     def __init__(self, entries):
         self.entries = entries

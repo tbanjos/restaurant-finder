@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 import time
 import uuid
+from dataclasses import replace
 from difflib import get_close_matches
 from typing import Any
 
@@ -20,7 +21,7 @@ from ...domain.errors import (
     CuisineNotFoundError,
     GlovoError,
 )
-from ...domain import Restaurant
+from ...domain import Location, Restaurant
 from .config import get_settings
 from .settings import Settings
 
@@ -42,23 +43,29 @@ class GlovoClient:
         settings: Settings | None = None,
     ) -> None:
         self.settings = settings or get_settings()
-        self.city_code = (
-            city_code if city_code is not None else self.settings.default_city_code
+        self.location = Location(
+            city_code=(
+                city_code
+                if city_code is not None
+                else self.settings.default_city_code
+            ),
+            city_name=(
+                city_name
+                if city_name is not None
+                else self.settings.default_city_name
+            ),
+            country_code=(
+                country_code
+                if country_code is not None
+                else self.settings.default_country_code
+            ),
+            language=(
+                language
+                if language is not None
+                else self.settings.default_language
+            ),
+            address=address,
         )
-        self.city_name = (
-            city_name if city_name is not None else self.settings.default_city_name
-        )
-        self.country_code = (
-            country_code
-            if country_code is not None
-            else self.settings.default_country_code
-        )
-        self.language = (
-            language if language is not None else self.settings.default_language
-        )
-        self.address = address
-        self.latitude: float | None = None
-        self.longitude: float | None = None
         self.timeout = (
             timeout if timeout is not None else self.settings.default_timeout
         )
@@ -71,10 +78,11 @@ class GlovoClient:
 
     def _headers(self) -> dict[str, str]:
         settings = self.settings
+        location = self.location
         now = str(int(time.time() * 1000))
         headers = {
             "accept": "application/json, text/plain, */*",
-            "accept-language": self.language,
+            "accept-language": location.language,
             "content-type": "application/json",
             "glovo-api-version": settings.api_version,
             "glovo-app-context": settings.app_context,
@@ -87,9 +95,9 @@ class GlovoClient:
             "glovo-delivery-location-timestamp": now,
             "glovo-device-urn": f"glv:device:{self._device_id}",
             "glovo-dynamic-session-id": self._session_id,
-            "glovo-language-code": self.language,
-            "glovo-location-city-code": self.city_code,
-            "glovo-location-country-code": self.country_code,
+            "glovo-language-code": location.language,
+            "glovo-location-city-code": location.city_code,
+            "glovo-location-country-code": location.country_code,
             "glovo-perseus-client-id": self._client_id,
             "glovo-perseus-consent": settings.perseus_consent,
             "glovo-perseus-session-id": self._session_id,
@@ -99,18 +107,22 @@ class GlovoClient:
             "referer": settings.referer,
             "user-agent": settings.user_agent,
         }
-        if self.latitude is not None and self.longitude is not None:
-            headers["glovo-delivery-location-latitude"] = str(self.latitude)
-            headers["glovo-delivery-location-longitude"] = str(self.longitude)
+        if location.has_coordinates:
+            headers["glovo-delivery-location-latitude"] = str(location.latitude)
+            headers["glovo-delivery-location-longitude"] = str(location.longitude)
         return headers
 
     def _resolve_location(self) -> None:
-        if self._location_resolved or not self.address:
+        location = self.location
+        if self._location_resolved or not location.address:
             return
 
-        query = self.address.strip()
-        if self.city_name and _normalize(self.city_name) not in _normalize(query):
-            query = f"{query}, {self.city_name}"
+        query = location.address.strip()
+        if (
+            location.city_name
+            and _normalize(location.city_name) not in _normalize(query)
+        ):
+            query = f"{query}, {location.city_name}"
 
         try:
             response = self.session.get(
@@ -137,12 +149,21 @@ class GlovoClient:
                 f"Could not find address '{query}'. Try adding more detail."
             )
 
-        self.latitude = float(match["latitude"])
-        self.longitude = float(match["longitude"])
-        if match.get("cityCode"):
-            self.city_code = str(match["cityCode"]).lower()
-        if match.get("countryCode"):
-            self.country_code = str(match["countryCode"]).lower()
+        self.location = replace(
+            location,
+            latitude=float(match["latitude"]),
+            longitude=float(match["longitude"]),
+            city_code=(
+                str(match["cityCode"]).lower()
+                if match.get("cityCode")
+                else location.city_code
+            ),
+            country_code=(
+                str(match["countryCode"]).lower()
+                if match.get("countryCode")
+                else location.country_code
+            ),
+        )
         self._location_resolved = True
 
     def _post(

@@ -2,13 +2,16 @@ import unittest
 
 from glovo_restaurants.application.pipeline import Pipeline
 from glovo_restaurants.application.cases import ListCuisines, SearchRestaurants
-from glovo_restaurants.domain import Restaurant
+from glovo_restaurants.domain import Location, Restaurant
 
 
 class _Provider:
-    city_name = "barcelona"
-    country_code = "es"
-    language = "en"
+    location = Location(
+        city_code="bcn",
+        city_name="barcelona",
+        country_code="es",
+        language="en",
+    )
 
     def resolve_cuisine(self, query):
         return ("Italian", "34685")

@@ -9,16 +9,14 @@ from __future__ import annotations
 
 from typing import Any, Mapping, Protocol, Sequence, runtime_checkable
 
-from ..domain import Restaurant
+from ..domain import Location, Restaurant
 
 
 @runtime_checkable
 class RestaurantProvider(Protocol):
     """Source of cuisine metadata and raw Glovo store entries."""
 
-    city_name: str
-    country_code: str
-    language: str
+    location: Location
 
     def resolve_cuisine(self, query: str) -> tuple[str, str]:
         """Resolve a cuisine query to a display name and filter id."""

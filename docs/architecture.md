@@ -44,6 +44,7 @@ HTTP, configuration, and file output.
 | File | Responsibility |
 | --- | --- |
 | `glovo_restaurants/domain/restaurant.py` | `Restaurant` entity and API-to-model mapping. |
+| `glovo_restaurants/domain/location.py` | `Location` value object for delivery address, city, country, language, and coordinates. |
 | `glovo_restaurants/domain/helper/options.py` | Supported ranking option constants. |
 | `glovo_restaurants/domain/helper/parsing.py` | Rating, votes, distance, and ETA parsing helpers. |
 | `glovo_restaurants/domain/helper/ranking.py` | `sort_restaurants` ranking strategies. |
@@ -135,7 +136,7 @@ parsed from strings such as `30-40 min` (midpoint), `20 min`, `1h 10 min`, or
 | `BuildFiltersStep` | `filter_id` | `filters` | Requests the cuisine filter and Glovo's rating sort; final ranking is local. |
 | `FetchStoreEntriesStep` | `filters` | `entries` | Delegates pagination and deduplication to `GlovoClient.fetch_store_entries`. |
 | `FilterOpenStep` | `entries` | `entries` | Keeps only stores whose `availability.status` is `OPEN`. |
-| `BuildRestaurantsStep` | `entries` | `restaurants` | Maps API payloads to `Restaurant`; uses client city/country/language for URLs. |
+| `BuildRestaurantsStep` | `entries` | `restaurants` | Maps API payloads to `Restaurant`; uses the provider's `Location` for URLs. |
 | `RankRestaurantsStep` | `restaurants`, `sort_by` | `restaurants` | Closest first by default; rating or ETA when requested. Missing values go last. |
 | `LimitResultsStep` | `restaurants`, `limit` | `restaurants` | Applied after ranking so the limit is meaningful. |
 
