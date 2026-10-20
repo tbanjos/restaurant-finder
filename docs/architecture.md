@@ -34,7 +34,11 @@ transformation.
 | `glovo_restaurants/config.properties` | API endpoints, client identity/version pins, pagination, and CLI defaults. |
 | `glovo_restaurants/search.py` | Search context, pipeline stages, and the default search pipeline. |
 | `glovo_restaurants/pipeline.py` | Generic `Pipeline` and `PipelineStep` primitives with no Glovo-specific logic. |
-| `glovo_restaurants/models.py` | `Restaurant` model, API-to-model mapping, parsing helpers, ranking. |
+| `glovo_restaurants/models/` | Domain models: `Restaurant`, ranking options, parsing helpers, and ranking. |
+| `glovo_restaurants/models/restaurant.py` | `Restaurant` domain class and API-to-model mapping. |
+| `glovo_restaurants/models/options.py` | Supported ranking option constants. |
+| `glovo_restaurants/models/parsing.py` | Rating, votes, distance, and ETA parsing helpers. |
+| `glovo_restaurants/models/ranking.py` | `sort_restaurants` ranking strategies. |
 | `glovo_restaurants/__init__.py` | Public package API. Keep this small and stable. |
 | `tests/` | Unit tests; no live network calls are required. |
 
