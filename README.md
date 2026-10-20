@@ -126,12 +126,13 @@ Chicago's Pizza Factory,100,109,Italian,30-40 min,<100m,Free,https://glovoapp.co
 
 ## Architecture
 
-The code uses a hexagonal (ports and adapters) architecture. `GlovoClient` is
-an outbound adapter that handles HTTP and pagination; the application use cases
-drive the composable stages in `glovo_restaurants/application/search.py`, which
-resolve the cuisine, fetch entries, keep open stores, map them to `Restaurant`
-objects, rank them, and apply the limit. New behaviour should normally be added
-as a pipeline stage or a use case, not in an adapter.
+The code uses a hexagonal (ports and adapters) architecture. The application
+depends only on the `RestaurantProvider` port, so providers other than Glovo can
+be added by implementing that interface in a new outbound adapter. `GlovoClient`
+implements the port and keeps Glovo-specific cuisine lookup, filters, pagination,
+availability handling, and response mapping inside its own adapter pipeline. The
+provider-neutral application pipeline then ranks and limits the returned
+`Restaurant` objects.
 
 See [docs/architecture.md](docs/architecture.md) for the module map, stage
 reference, extension guide, API assumptions, troubleshooting, and maintenance

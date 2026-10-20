@@ -7,6 +7,7 @@ from .domain.errors import (
 )
 from .domain import (
     SORT_OPTIONS,
+    Location,
     Restaurant,
     parse_distance,
     parse_eta,
@@ -35,6 +36,7 @@ __all__ = [
     "GlovoClient",
     "GlovoError",
     "ListCuisines",
+    "Location",
     "Pipeline",
     "PipelineStep",
     "Restaurant",

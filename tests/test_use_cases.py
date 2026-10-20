@@ -13,13 +13,10 @@ class _Provider:
         language="en",
     )
 
-    def resolve_cuisine(self, query):
-        return ("Italian", "34685")
+    def cuisine_names(self):
+        return ["Sushi", "Italian"]
 
-    def cuisines(self):
-        return {"italian": ("Italian", "34685"), "sushi": ("Sushi", "123")}
-
-    def fetch_store_entries(self, filters):
+    def find_restaurants(self, cuisine):
         return []
 
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ..search_context import SearchContext
+from .context import GlovoSearchContext
 
 
 class FetchStoreEntriesStep:
@@ -10,5 +10,5 @@ class FetchStoreEntriesStep:
 
     name = "fetch-store-entries"
 
-    def run(self, context: SearchContext) -> None:
+    def run(self, context: GlovoSearchContext) -> None:
         context.entries = context.client.fetch_store_entries(context.filters)

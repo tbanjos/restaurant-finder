@@ -1,6 +1,7 @@
 import unittest
 
 from glovo_restaurants.adapters.outbound.glovo_client import GlovoClient
+from glovo_restaurants.application.cases import SearchRestaurants
 from glovo_restaurants.domain.errors import GlovoError
 
 
@@ -46,7 +47,7 @@ class FetchRestaurantsTests(unittest.TestCase):
             [],
         ]
         client = FakeClient(pages)
-        restaurants = client.fetch_restaurants("italian", limit=2)
+        restaurants = SearchRestaurants(client).execute("italian", limit=2)
 
         self.assertEqual([item.name for item in restaurants], ["Alpha", "Gamma"])
         self.assertEqual(len(client.calls), 3)
@@ -64,7 +65,7 @@ class FetchRestaurantsTests(unittest.TestCase):
             [],
         ]
         client = FakeClient(pages)
-        restaurants = client.fetch_restaurants("italian", limit=None)
+        restaurants = SearchRestaurants(client).execute("italian", limit=None)
 
         self.assertEqual([item.name for item in restaurants], ["Open", "Also Open"])
 

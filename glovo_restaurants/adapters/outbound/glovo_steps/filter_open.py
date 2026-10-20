@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..search_context import SearchContext
+from .context import GlovoSearchContext
 
 
 class FilterOpenStep:
@@ -12,7 +12,7 @@ class FilterOpenStep:
 
     name = "filter-open"
 
-    def run(self, context: SearchContext) -> None:
+    def run(self, context: GlovoSearchContext) -> None:
         context.entries = [
             entry for entry in context.entries if store_is_open(entry)
         ]

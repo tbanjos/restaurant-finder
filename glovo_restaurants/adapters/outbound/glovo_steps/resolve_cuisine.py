@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ..search_context import SearchContext
+from .context import GlovoSearchContext
 
 
 class ResolveCuisineStep:
@@ -10,5 +10,5 @@ class ResolveCuisineStep:
 
     name = "resolve-cuisine"
 
-    def run(self, context: SearchContext) -> None:
+    def run(self, context: GlovoSearchContext) -> None:
         _, context.filter_id = context.client.resolve_cuisine(context.cuisine)

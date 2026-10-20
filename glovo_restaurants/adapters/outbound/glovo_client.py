@@ -15,14 +15,15 @@ from typing import Any
 
 import requests
 
-from ...application.cases import SearchRestaurants
+from ...application.pipeline import Pipeline
+from ...domain import Location, Restaurant
 from ...domain.errors import (
     AddressNotFoundError,
     CuisineNotFoundError,
     GlovoError,
 )
-from ...domain import Location, Restaurant
 from .config import get_settings
+from .glovo_steps import GlovoSearchContext, build_glovo_pipeline
 from .settings import Settings
 
 
@@ -75,6 +76,7 @@ class GlovoClient:
         self._client_id = str(uuid.uuid4())
         self._cuisines: dict[str, tuple[str, str]] | None = None
         self._location_resolved = False
+        self._search_pipeline: Pipeline[GlovoSearchContext] = build_glovo_pipeline()
 
     def _headers(self) -> dict[str, str]:
         settings = self.settings
@@ -283,25 +285,14 @@ class GlovoClient:
 
         return entries
 
-    def fetch_restaurants(
-        self,
-        cuisine: str,
-        *,
-        limit: int | None = 30,
-        sort_by: str | None = None,
-    ) -> list[Restaurant]:
-        """Return ranked open restaurants for ``cuisine``.
+    def find_restaurants(self, cuisine: str) -> list[Restaurant]:
+        """Return open Glovo restaurants matching ``cuisine``.
 
-        ``sort_by`` accepts ``distance``, ``rating``, or ``delivery_time``.
-        When omitted, the ``defaults.sort`` setting is used. This convenience
-        method keeps the historical client API working; new callers should use
-        :class:`~glovo_restaurants.application.cases.SearchRestaurants`.
+        This is the :class:`RestaurantProvider` port implementation. Ranking
+        and limiting are application concerns handled by the caller.
         """
-        return SearchRestaurants(self).execute(
-            cuisine,
-            limit=limit,
-            sort_by=sort_by or self.settings.default_sort,
-        )
+        context = GlovoSearchContext(client=self, cuisine=cuisine)
+        return self._search_pipeline.run(context).restaurants
 
     def cuisine_names(self) -> list[str]:
         return sorted(name for name, _ in self.cuisines().values())

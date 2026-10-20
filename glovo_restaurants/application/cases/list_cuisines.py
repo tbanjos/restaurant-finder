@@ -12,4 +12,4 @@ class ListCuisines:
         self.provider = provider
 
     def execute(self) -> list[str]:
-        return sorted(name for name, _ in self.provider.cuisines().values())
+        return sorted(self.provider.cuisine_names())

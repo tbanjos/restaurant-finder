@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ..search_context import SearchContext
+from .context import GlovoSearchContext
 
 
 class BuildFiltersStep:
@@ -10,7 +10,7 @@ class BuildFiltersStep:
 
     name = "build-filters"
 
-    def run(self, context: SearchContext) -> None:
+    def run(self, context: GlovoSearchContext) -> None:
         if context.filter_id is None:
             raise RuntimeError("resolve-cuisine must run before build-filters")
         context.filters = [

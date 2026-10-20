@@ -64,44 +64,6 @@ class ParseEtaTests(unittest.TestCase):
         self.assertIsNone(parse_eta(""))
 
 
-class RestaurantTests(unittest.TestCase):
-    def test_from_api(self):
-        entry = {
-            "id": "1",
-            "title": "Can Pizza",
-            "slug": "can-pizza",
-            "tag": "Italian",
-            "eta": "30-40 min",
-            "distance": "<100m",
-            "isNew": False,
-            "ratings": {"score": "96%", "votes": "(406)"},
-            "deliveryFee": {"effectiveFee": "Free"},
-        }
-        restaurant = Restaurant.from_api(entry)
-        self.assertEqual(restaurant.name, "Can Pizza")
-        self.assertEqual(restaurant.rating, 96)
-        self.assertEqual(restaurant.votes, 406)
-        self.assertEqual(restaurant.cuisine, "Italian")
-        self.assertEqual(restaurant.delivery_fee, "Free")
-        self.assertEqual(restaurant.distance_meters, 100)
-        self.assertEqual(restaurant.eta_minutes, 35)
-        self.assertEqual(
-            restaurant.url,
-            "https://glovoapp.com/en/es/barcelona/stores/can-pizza",
-        )
-
-    def test_new_store_has_no_rating(self):
-        entry = {
-            "id": "2",
-            "title": "Oak Berry",
-            "slug": "oak-berry",
-            "ratings": {"score": "New", "votes": ""},
-        }
-        restaurant = Restaurant.from_api(entry)
-        self.assertIsNone(restaurant.rating)
-        self.assertTrue(restaurant.is_new)
-
-
 class SortRestaurantsTests(unittest.TestCase):
     def _restaurant(self, name, rating, votes, distance="", eta=""):
         return Restaurant(

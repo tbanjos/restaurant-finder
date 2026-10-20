@@ -1,10 +1,9 @@
 import unittest
 
 from glovo_restaurants.application.pipeline import Pipeline
-from glovo_restaurants.domain import Location
 from glovo_restaurants.application.search import build_search_pipeline
 from glovo_restaurants.application.search_context import SearchContext
-from glovo_restaurants.application.steps import store_is_open
+from glovo_restaurants.domain import Location, Restaurant
 
 
 class _Step:
@@ -36,7 +35,7 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual([step.name for step in pipe], ["first", "second"])
 
 
-class _FakeClient:
+class _FakeProvider:
     location = Location(
         city_code="bcn",
         city_name="barcelona",
@@ -44,74 +43,57 @@ class _FakeClient:
         language="en",
     )
 
-    def __init__(self, entries):
-        self.entries = entries
+    def __init__(self, restaurants):
+        self.restaurants = restaurants
+        self.cuisines = []
 
-    def resolve_cuisine(self, query):
-        return ("Italian", "34685")
+    def find_restaurants(self, cuisine):
+        self.cuisines.append(cuisine)
+        return self.restaurants
 
-    def fetch_store_entries(self, filters):
-        self.filters = filters
-        return self.entries
+
+def _restaurant(name, rating, votes, distance="", eta=""):
+    return Restaurant(
+        name=name,
+        rating=rating,
+        votes=votes,
+        cuisine="Italian",
+        eta=eta,
+        distance=distance,
+        delivery_fee="",
+        url="",
+    )
 
 
 class SearchPipelineTests(unittest.TestCase):
-    def _entry(
-        self, store_id, title, score, votes, status="OPEN", distance="", eta=""
-    ):
-        return {
-            "id": store_id,
-            "title": title,
-            "slug": title.lower().replace(" ", "-"),
-            "tag": "Italian",
-            "ratings": {"score": score, "votes": votes},
-            "availability": {"status": status},
-            "distance": distance,
-            "eta": eta,
-        }
-
-    def test_default_pipeline_filters_ranks_closest_and_limits(self):
-        client = _FakeClient(
+    def test_default_pipeline_fetches_ranks_closest_and_limits(self):
+        provider = _FakeProvider(
             [
-                self._entry(
-                    "1", "Closed", "100%", "(100)", status="CLOSED", distance="50m"
-                ),
-                self._entry("2", "Alpha", "100%", "(10)", distance="2km"),
-                self._entry("3", "Beta", "99%", "(50)", distance="500m"),
+                _restaurant("Alpha", 100, 10, distance="2km"),
+                _restaurant("Beta", 99, 50, distance="500m"),
             ]
         )
-        context = SearchContext(client=client, cuisine="italian", limit=1)
+        context = SearchContext(client=provider, cuisine="italian", limit=1)
 
         result = build_search_pipeline().run(context)
 
         self.assertEqual([item.name for item in result.restaurants], ["Beta"])
-        self.assertEqual(
-            result.filters,
-            [
-                {"filterId": "ADMIN_FILTERS", "filterAttributeIds": ["34685"]},
-                {"filterId": "SORT_BY", "filterAttributeIds": ["RATING"]},
-            ],
-        )
+        self.assertEqual(provider.cuisines, ["italian"])
 
     def test_pipeline_can_rank_by_delivery_time(self):
-        client = _FakeClient(
+        provider = _FakeProvider(
             [
-                self._entry("1", "Slow", "100%", "(100)", eta="45-55 min"),
-                self._entry("2", "Fast", "80%", "(10)", eta="15-25 min"),
+                _restaurant("Slow", 100, 100, eta="45-55 min"),
+                _restaurant("Fast", 80, 10, eta="15-25 min"),
             ]
         )
         context = SearchContext(
-            client=client, cuisine="italian", limit=None, sort_by="delivery_time"
+            client=provider, cuisine="italian", limit=None, sort_by="delivery_time"
         )
 
         result = build_search_pipeline().run(context)
 
         self.assertEqual([item.name for item in result.restaurants], ["Fast", "Slow"])
-
-    def test_store_is_open_treats_missing_availability_as_open(self):
-        self.assertTrue(store_is_open({}))
-        self.assertTrue(store_is_open({"availability": {"status": "open"}}))
-        self.assertFalse(store_is_open({"availability": {"status": "CLOSED"}}))
 
 
 if __name__ == "__main__":

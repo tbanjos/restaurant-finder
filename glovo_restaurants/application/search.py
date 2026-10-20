@@ -1,28 +1,20 @@
-"""Composition of the default restaurant-search pipeline.
+"""Composition of the default provider-neutral search pipeline.
 
 The pipeline is the application's central data flow:
 
-    resolve cuisine -> build API filters -> fetch entries -> keep open stores
-    -> map to models -> rank -> apply limit
+    fetch restaurants -> rank -> apply limit
 
-``SearchRestaurants.execute`` is the application entry point around this
-pipeline. New behaviour should normally be added as a stage in
-:mod:`glovo_restaurants.application.steps` instead of growing an adapter class.
+Provider-specific concerns such as cuisine lookup, API filters, availability,
+and response mapping belong to the outbound adapter. New application behaviour
+should normally be added as a stage in
+:mod:`glovo_restaurants.application.steps`.
 """
 
 from __future__ import annotations
 
 from .pipeline import Pipeline
 from .search_context import SearchContext
-from .steps import (
-    BuildFiltersStep,
-    BuildRestaurantsStep,
-    FetchStoreEntriesStep,
-    FilterOpenStep,
-    LimitResultsStep,
-    RankRestaurantsStep,
-    ResolveCuisineStep,
-)
+from .steps import FetchRestaurantsStep, LimitResultsStep, RankRestaurantsStep
 
 
 def build_search_pipeline() -> Pipeline[SearchContext]:
@@ -33,11 +25,7 @@ def build_search_pipeline() -> Pipeline[SearchContext]:
     """
     return Pipeline(
         (
-            ResolveCuisineStep(),
-            BuildFiltersStep(),
-            FetchStoreEntriesStep(),
-            FilterOpenStep(),
-            BuildRestaurantsStep(),
+            FetchRestaurantsStep(),
             RankRestaurantsStep(),
             LimitResultsStep(),
         )

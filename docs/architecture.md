@@ -7,8 +7,9 @@ should live, and what to check when Glovo changes its private web API.
 
 The code follows a hexagonal (ports and adapters) architecture:
 
-- **Domain** contains the `Restaurant` entity, parsing, ranking, and domain
-  errors. It has no dependency on HTTP, CLI, configuration, or files.
+- **Domain** contains the `Restaurant` entity, `Location` value object, parsing,
+  ranking, and domain errors. It has no dependency on HTTP, CLI, configuration,
+  or files.
 - **Application** contains use cases, the search pipeline, and the ports that
   outbound adapters implement.
 - **Adapters** translate between the outside world and the application. The CLI
@@ -23,13 +24,15 @@ nothing else in the package.
 adapters.inbound.cli.main
   -> argparse arguments (cuisine, address, city, sort-by, limit, output)
   -> application.cases.SearchRestaurants.execute(...)
-       -> RestaurantProvider port (implemented by GlovoClient)
-       -> search pipeline
-            resolve-cuisine
-            build-filters
-            fetch-store-entries
-            filter-open
-            build-restaurants
+       -> application search pipeline
+            fetch-restaurants
+                 -> RestaurantProvider.find_restaurants (port)
+                      -> Glovo adapter pipeline
+                           resolve-cuisine
+                           build-filters
+                           fetch-store-entries
+                           filter-open
+                           build-restaurants
             rank-restaurants (distance | rating | delivery_time)
             limit-results
   -> adapters.outbound.csv_writer.CsvRestaurantWriter.write(...)
@@ -39,11 +42,15 @@ The application use cases are the core of the application. The CLI owns
 argument parsing, user-facing messages, and exit codes; outbound adapters own
 HTTP, configuration, and file output.
 
+Provider-specific concerns stay inside the adapter. A different provider can be
+added by implementing `RestaurantProvider` (`location`, `cuisine_names`, and
+`find_restaurants`) and injecting it into the same use cases and pipeline.
+
 ## Package layout
 
 | File | Responsibility |
 | --- | --- |
-| `glovo_restaurants/domain/restaurant.py` | `Restaurant` entity and API-to-model mapping. |
+| `glovo_restaurants/domain/restaurant.py` | Provider-neutral `Restaurant` entity. |
 | `glovo_restaurants/domain/location.py` | `Location` value object for delivery address, city, country, language, and coordinates. |
 | `glovo_restaurants/domain/helper/options.py` | Supported ranking option constants. |
 | `glovo_restaurants/domain/helper/parsing.py` | Rating, votes, distance, and ETA parsing helpers. |
@@ -53,14 +60,15 @@ HTTP, configuration, and file output.
 | `glovo_restaurants/application/cases/` | One module per use case. |
 | `glovo_restaurants/application/cases/search_restaurants.py` | `SearchRestaurants` use case. |
 | `glovo_restaurants/application/cases/list_cuisines.py` | `ListCuisines` use case. |
-| `glovo_restaurants/application/search.py` | Composition of the default search pipeline. |
-| `glovo_restaurants/application/steps/` | One module per pipeline stage. |
+| `glovo_restaurants/application/search.py` | Composition of the provider-neutral search pipeline. |
+| `glovo_restaurants/application/steps/` | Provider-neutral stages: fetch, rank, and limit. |
 | `glovo_restaurants/application/search_context.py` | `SearchContext` dataclass shared by pipeline stages. |
 | `glovo_restaurants/application/pipeline.py` | `Pipeline` dataclass with no Glovo-specific logic. |
 | `glovo_restaurants/application/pipeline_step.py` | `PipelineStep` protocol implemented by stages. |
 | `glovo_restaurants/adapters/inbound/cli.py` | CLI adapter: argument parsing, user-facing messages, and exit codes. |
 | `glovo_restaurants/adapters/inbound/parser.py` | argparse configuration for the CLI adapter. |
-| `glovo_restaurants/adapters/outbound/glovo_client.py` | Glovo HTTP transport: headers, location resolution, pagination, response validation. |
+| `glovo_restaurants/adapters/outbound/glovo_client.py` | Glovo `RestaurantProvider`: HTTP transport, location resolution, pagination, and search entry point. |
+| `glovo_restaurants/adapters/outbound/glovo_steps/` | Glovo-specific pipeline: cuisine lookup, API filters, fetching, availability, and response mapping. |
 | `glovo_restaurants/adapters/outbound/config.py` | Properties loading and lookup for `config.properties`. |
 | `glovo_restaurants/adapters/outbound/settings.py` | `Settings` dataclass with validation. |
 | `glovo_restaurants/adapters/outbound/configuration_error.py` | `ConfigurationError` raised by the configuration adapter. |
@@ -76,11 +84,12 @@ The application defines its outbound contracts in
 
 | Port | Implemented by | Purpose |
 | --- | --- | --- |
-| `RestaurantProvider` | `GlovoClient` | Resolve cuisines and fetch raw store entries. |
+| `RestaurantProvider` | `GlovoClient` (or any future provider) | Expose cuisine names and return open `Restaurant` objects for a cuisine. |
 | `RestaurantWriter` | `CsvRestaurantWriter` | Persist ranked restaurants. |
 
-To swap a dependency, implement the matching protocol and inject it into the
-use case or inbound adapter. Application code must not import adapter modules.
+To add another provider, implement `RestaurantProvider` in a new outbound
+adapter and inject it into the CLI/use case composition. No application or
+domain changes are required. Application code must not import adapter modules.
 
 ## Pipeline contract
 
@@ -105,14 +114,11 @@ contract narrow makes stages easy to test and reorder.
 
 | Field | Written by | Meaning |
 | --- | --- | --- |
-| `client` | caller | The `GlovoClient` used for transport. |
+| `client` | caller | The `RestaurantProvider` used to fetch restaurants. |
 | `cuisine` | caller | User-supplied cuisine query. |
 | `sort_by` | caller | Ranking strategy: `distance` (default), `rating`, or `delivery_time`. |
 | `limit` | caller | Maximum results after ranking, or `None` for all. |
-| `filter_id` | `resolve-cuisine` | Glovo food-type filter id. |
-| `filters` | `build-filters` | JSON filters sent to the store-wall endpoint. |
-| `entries` | fetch/filter stages | Raw store entries from Glovo. |
-| `restaurants` | build/rank/limit stages | Final typed results. |
+| `restaurants` | fetch/rank/limit stages | Provider-neutral typed results. |
 
 ## Ranking
 
@@ -130,21 +136,31 @@ parsed from strings such as `30-40 min` (midpoint), `20 min`, `1h 10 min`, or
 
 ## Default search stages
 
+The application pipeline is provider-neutral:
+
 | Stage | Input | Output | Notes |
 | --- | --- | --- | --- |
-| `ResolveCuisineStep` | `cuisine` | `filter_id` | Uses case/punctuation-insensitive matching and typo suggestions. |
-| `BuildFiltersStep` | `filter_id` | `filters` | Requests the cuisine filter and Glovo's rating sort; final ranking is local. |
-| `FetchStoreEntriesStep` | `filters` | `entries` | Delegates pagination and deduplication to `GlovoClient.fetch_store_entries`. |
-| `FilterOpenStep` | `entries` | `entries` | Keeps only stores whose `availability.status` is `OPEN`. |
-| `BuildRestaurantsStep` | `entries` | `restaurants` | Maps API payloads to `Restaurant`; uses the provider's `Location` for URLs. |
+| `FetchRestaurantsStep` | `cuisine` | `restaurants` | Delegates to `RestaurantProvider.find_restaurants`. |
 | `RankRestaurantsStep` | `restaurants`, `sort_by` | `restaurants` | Closest first by default; rating or ETA when requested. Missing values go last. |
 | `LimitResultsStep` | `restaurants`, `limit` | `restaurants` | Applied after ranking so the limit is meaningful. |
 
-`build_search_pipeline()` is the single place that defines stage order. If you
-need custom behaviour, compose a new pipeline rather than branching inside a
-stage.
+`build_search_pipeline()` is the single place that defines application stage
+order. Provider-specific work belongs in the outbound adapter.
 
-### Adding a stage
+### Glovo adapter stages
+
+`GlovoClient.find_restaurants()` runs its own pipeline over
+`GlovoSearchContext` before returning domain `Restaurant` objects:
+
+| Stage | Input | Output | Notes |
+| --- | --- | --- | --- |
+| `ResolveCuisineStep` | `cuisine` | `filter_id` | Uses case/punctuation-insensitive matching and typo suggestions. |
+| `BuildFiltersStep` | `filter_id` | `filters` | Builds Glovo's cuisine and rating filter payload. |
+| `FetchStoreEntriesStep` | `filters` | `entries` | Delegates pagination and deduplication to `GlovoClient.fetch_store_entries`. |
+| `FilterOpenStep` | `entries` | `entries` | Keeps only stores whose `availability.status` is `OPEN`. |
+| `BuildRestaurantsStep` | `entries` | `restaurants` | Maps Glovo payloads to domain `Restaurant` objects. |
+
+### Adding an application stage
 
 1. Add a dedicated module under `application/steps/` with a class that has a
    unique `name` and a `run(context)` method.
@@ -157,17 +173,21 @@ stage.
 Example:
 
 ```python
-class DropChainsStep:
-    name = "drop-chains"
+class DropUnratedStep:
+    name = "drop-unrated"
 
     def run(self, context: SearchContext) -> None:
-        context.entries = [
-            entry for entry in context.entries
-            if entry.get("isChain") is not True
+        context.restaurants = [
+            restaurant
+            for restaurant in context.restaurants
+            if restaurant.rating is not None
         ]
 ```
 
-Then insert `DropChainsStep()` before `BuildRestaurantsStep()`.
+Then insert `DropUnratedStep()` before `RankRestaurantsStep()`.
+
+Provider-specific stages belong under the adapter that needs them, with their
+own context type. Do not add Glovo fields to `SearchContext`.
 
 ### Replacing the pipeline
 
@@ -176,7 +196,7 @@ seam for tests or embedders:
 
 ```python
 pipeline = Pipeline(
-    (ResolveCuisineStep(), BuildFiltersStep(), FetchStoreEntriesStep())
+    (FetchRestaurantsStep(), RankRestaurantsStep(), LimitResultsStep())
 )
 use_case = SearchRestaurants(client, pipeline=pipeline)
 restaurants = use_case.execute("italian")
@@ -185,18 +205,22 @@ restaurants = use_case.execute("italian")
 ## Glovo HTTP adapter responsibilities
 
 `GlovoClient` is the outbound adapter implementing `RestaurantProvider`. It
-should not know about ranking, CSV formatting, or user-facing messages. Its
-jobs are:
+should not know about application ranking, CSV formatting, or user-facing
+messages. Its jobs are:
 
+- Implement `find_restaurants()` by running the Glovo-specific pipeline.
 - Build the required `glovo-*` headers.
 - Resolve an optional delivery address to coordinates and a city code.
 - Page through the store-wall endpoint and deduplicate store ids.
+- Map Glovo responses to domain `Restaurant` objects.
 - Raise typed errors for request and response failures.
 
 Important implementation details:
 
+- `find_restaurants()` is the `RestaurantProvider` entry point. It delegates to
+  `glovo_steps.build_glovo_pipeline()`.
 - `fetch_store_entries()` is the pagination boundary. Availability filtering
-  happens later in the pipeline so transport code stays reusable.
+  happens in the adapter's `FilterOpenStep` so transport code stays reusable.
 - `_resolve_location()` runs lazily on the first request. It appends the city
   to the address only when the city is not already present.
 - The address and coordinates are cached for the lifetime of the client.
@@ -275,10 +299,11 @@ Guidelines:
 - Unit tests must not call the live Glovo API.
 - `tests/test_client.py` uses a fake client/session to test pagination, address
   headers, and closed-store filtering.
+- `tests/test_glovo_steps.py` covers Glovo response mapping and availability.
 - `tests/test_config.py` covers properties parsing, validation, overrides, and
   client settings wiring.
-- `tests/test_pipeline.py` tests the pipeline contract and the default stage
-  composition.
+- `tests/test_pipeline.py` tests the pipeline contract and the provider-neutral
+  stage composition.
 - `tests/test_models.py` covers rating/votes/distance/ETA parsing and all ranking strategies.
 - When changing a stage, add a test at the stage or pipeline level. When
   changing transport, add a test with a fake session.
