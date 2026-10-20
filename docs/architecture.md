@@ -22,7 +22,7 @@ nothing else in the package.
 ```text
 adapters.inbound.cli.main
   -> argparse arguments (cuisine, address, city, sort-by, limit, output)
-  -> application.use_cases.SearchRestaurants.execute(...)
+  -> application.cases.SearchRestaurants.execute(...)
        -> RestaurantProvider port (implemented by GlovoClient)
        -> search pipeline
             resolve-cuisine
@@ -49,8 +49,11 @@ HTTP, configuration, and file output.
 | `glovo_restaurants/domain/helper/ranking.py` | `sort_restaurants` ranking strategies. |
 | `glovo_restaurants/domain/errors.py` | Domain/API error hierarchy. |
 | `glovo_restaurants/application/ports.py` | `RestaurantProvider` and `RestaurantWriter` protocols. |
-| `glovo_restaurants/application/use_cases.py` | `SearchRestaurants` and `ListCuisines` use cases. |
-| `glovo_restaurants/application/search.py` | Pipeline stages and the default search pipeline. |
+| `glovo_restaurants/application/cases/` | One module per use case. |
+| `glovo_restaurants/application/cases/search_restaurants.py` | `SearchRestaurants` use case. |
+| `glovo_restaurants/application/cases/list_cuisines.py` | `ListCuisines` use case. |
+| `glovo_restaurants/application/search.py` | Composition of the default search pipeline. |
+| `glovo_restaurants/application/steps/` | One module per pipeline stage. |
 | `glovo_restaurants/application/search_context.py` | `SearchContext` dataclass shared by pipeline stages. |
 | `glovo_restaurants/application/pipeline.py` | `Pipeline` dataclass with no Glovo-specific logic. |
 | `glovo_restaurants/application/pipeline_step.py` | `PipelineStep` protocol implemented by stages. |
@@ -142,11 +145,13 @@ stage.
 
 ### Adding a stage
 
-1. Create a class with a unique `name` and a `run(context)` method.
-2. Read and write only the context fields the stage owns.
-3. Raise a `GlovoError` subclass for user-facing failures.
-4. Add the stage to `build_search_pipeline()` in the correct position.
-5. Add a focused test in `tests/test_pipeline.py`.
+1. Add a dedicated module under `application/steps/` with a class that has a
+   unique `name` and a `run(context)` method.
+2. Export the class from `application/steps/__init__.py`.
+3. Read and write only the context fields the stage owns.
+4. Raise a `GlovoError` subclass for user-facing failures.
+5. Add the stage to `build_search_pipeline()` in the correct position.
+6. Add a focused test in `tests/test_pipeline.py`.
 
 Example:
 

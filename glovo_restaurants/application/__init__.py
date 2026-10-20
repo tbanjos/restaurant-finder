@@ -3,7 +3,9 @@
 from .pipeline import Pipeline
 from .pipeline_step import PipelineStep
 from .ports import RestaurantProvider, RestaurantWriter
-from .search import (
+from .search import build_search_pipeline
+from .search_context import SearchContext
+from .steps import (
     BuildFiltersStep,
     BuildRestaurantsStep,
     FetchStoreEntriesStep,
@@ -11,11 +13,9 @@ from .search import (
     LimitResultsStep,
     RankRestaurantsStep,
     ResolveCuisineStep,
-    build_search_pipeline,
     store_is_open,
 )
-from .search_context import SearchContext
-from .use_cases import ListCuisines, SearchRestaurants
+from .cases import ListCuisines, SearchRestaurants
 
 __all__ = [
     "BuildFiltersStep",

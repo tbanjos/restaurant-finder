@@ -19,7 +19,7 @@ from .application.pipeline_step import PipelineStep
 from .application.ports import RestaurantProvider, RestaurantWriter
 from .application.search import build_search_pipeline
 from .application.search_context import SearchContext
-from .application.use_cases import ListCuisines, SearchRestaurants
+from .application.cases import ListCuisines, SearchRestaurants
 from .adapters.inbound.cli import main
 from .adapters.outbound.config import get_settings, load_settings
 from .adapters.outbound.configuration_error import ConfigurationError

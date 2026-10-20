@@ -1,8 +1,9 @@
 import unittest
 
 from glovo_restaurants.application.pipeline import Pipeline
-from glovo_restaurants.application.search import build_search_pipeline, store_is_open
+from glovo_restaurants.application.search import build_search_pipeline
 from glovo_restaurants.application.search_context import SearchContext
+from glovo_restaurants.application.steps import store_is_open
 
 
 class _Step:

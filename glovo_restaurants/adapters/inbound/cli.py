@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 
-from ...application.use_cases import ListCuisines, SearchRestaurants
+from ...application.cases import ListCuisines, SearchRestaurants
 from ...domain.errors import CuisineNotFoundError, GlovoError
 from ..outbound.configuration_error import ConfigurationError
 from ..outbound.csv_writer import CsvRestaurantWriter

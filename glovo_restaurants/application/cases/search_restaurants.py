@@ -1,16 +1,12 @@
-"""Application use cases.
-
-Use cases orchestrate the domain and outbound ports. They know nothing about
-HTTP, command-line arguments, property files, or CSV formatting.
-"""
+"""Use case for finding ranked restaurants by cuisine."""
 
 from __future__ import annotations
 
-from .pipeline import Pipeline
-from .ports import RestaurantProvider
-from .search import build_search_pipeline
-from .search_context import SearchContext
-from ..domain import DEFAULT_SORT, Restaurant
+from ..pipeline import Pipeline
+from ..ports import RestaurantProvider
+from ..search import build_search_pipeline
+from ..search_context import SearchContext
+from ...domain import DEFAULT_SORT, Restaurant
 
 
 class SearchRestaurants:
@@ -38,13 +34,3 @@ class SearchRestaurants:
             sort_by=sort_by or DEFAULT_SORT,
         )
         return self.pipeline.run(context).restaurants
-
-
-class ListCuisines:
-    """List the cuisine names exposed by the restaurant provider."""
-
-    def __init__(self, provider: RestaurantProvider) -> None:
-        self.provider = provider
-
-    def execute(self) -> list[str]:
-        return sorted(name for name, _ in self.provider.cuisines().values())

@@ -44,12 +44,6 @@ class CsvRestaurantWriter:
                     }
                 )
 
-
-def write_csv(restaurants: Sequence[Restaurant], output: Path) -> None:
-    """Backward-compatible helper for writing restaurants to CSV."""
-    CsvRestaurantWriter(output).write(restaurants)
-
-
 def _rating_value(rating: float | None) -> str | int:
     if rating is None:
         return ""

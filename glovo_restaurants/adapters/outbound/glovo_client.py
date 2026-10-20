@@ -14,7 +14,7 @@ from typing import Any
 
 import requests
 
-from ...application.use_cases import SearchRestaurants
+from ...application.cases import SearchRestaurants
 from ...domain.errors import (
     AddressNotFoundError,
     CuisineNotFoundError,
@@ -274,7 +274,7 @@ class GlovoClient:
         ``sort_by`` accepts ``distance``, ``rating``, or ``delivery_time``.
         When omitted, the ``defaults.sort`` setting is used. This convenience
         method keeps the historical client API working; new callers should use
-        :class:`~glovo_restaurants.application.use_cases.SearchRestaurants`.
+        :class:`~glovo_restaurants.application.cases.SearchRestaurants`.
         """
         return SearchRestaurants(self).execute(
             cuisine,
