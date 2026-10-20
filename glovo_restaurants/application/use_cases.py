@@ -8,7 +8,8 @@ from __future__ import annotations
 
 from .pipeline import Pipeline
 from .ports import RestaurantProvider
-from .search import SearchContext, build_search_pipeline
+from .search import build_search_pipeline
+from .search_context import SearchContext
 from ..domain import DEFAULT_SORT, Restaurant
 
 

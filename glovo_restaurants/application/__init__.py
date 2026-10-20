@@ -1,6 +1,7 @@
 """Application layer: use cases, ports, and the search pipeline."""
 
-from .pipeline import Pipeline, PipelineStep
+from .pipeline import Pipeline
+from .pipeline_step import PipelineStep
 from .ports import RestaurantProvider, RestaurantWriter
 from .search import (
     BuildFiltersStep,
@@ -10,10 +11,10 @@ from .search import (
     LimitResultsStep,
     RankRestaurantsStep,
     ResolveCuisineStep,
-    SearchContext,
     build_search_pipeline,
     store_is_open,
 )
+from .search_context import SearchContext
 from .use_cases import ListCuisines, SearchRestaurants
 
 __all__ = [

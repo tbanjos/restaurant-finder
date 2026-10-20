@@ -1,28 +1,11 @@
-"""Small, typed pipeline primitives.
-
-The pipeline pattern is used to keep the application's data flow explicit:
-each stage receives the same context object, mutates the fields it owns, and
-returns control to the pipeline. Stages are deliberately independent so they
-can be reordered, replaced, or tested in isolation.
-"""
+"""Immutable pipeline of application steps."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Generic, Protocol, TypeVar, runtime_checkable
+from typing import Generic
 
-ContextT = TypeVar("ContextT")
-
-
-@runtime_checkable
-class PipelineStep(Protocol[ContextT]):
-    """A single, named unit of work in a pipeline."""
-
-    name: str
-
-    def run(self, context: ContextT) -> None:
-        """Apply this step to ``context``."""
-        ...
+from .pipeline_step import ContextT, PipelineStep
 
 
 @dataclass(frozen=True)

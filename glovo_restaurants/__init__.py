@@ -14,19 +14,18 @@ from .domain import (
     parse_votes,
     sort_restaurants,
 )
-from .application.pipeline import Pipeline, PipelineStep
+from .application.pipeline import Pipeline
+from .application.pipeline_step import PipelineStep
 from .application.ports import RestaurantProvider, RestaurantWriter
-from .application.search import SearchContext, build_search_pipeline
+from .application.search import build_search_pipeline
+from .application.search_context import SearchContext
 from .application.use_cases import ListCuisines, SearchRestaurants
 from .adapters.inbound.cli import main
-from .adapters.outbound.config import (
-    ConfigurationError,
-    Settings,
-    get_settings,
-    load_settings,
-)
+from .adapters.outbound.config import get_settings, load_settings
+from .adapters.outbound.configuration_error import ConfigurationError
 from .adapters.outbound.csv_writer import CsvRestaurantWriter
 from .adapters.outbound.glovo_client import GlovoClient
+from .adapters.outbound.settings import Settings
 
 __all__ = [
     "AddressNotFoundError",

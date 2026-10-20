@@ -6,7 +6,7 @@ import sys
 
 from ...application.use_cases import ListCuisines, SearchRestaurants
 from ...domain.errors import CuisineNotFoundError, GlovoError
-from ..outbound.config import ConfigurationError
+from ..outbound.configuration_error import ConfigurationError
 from ..outbound.csv_writer import CsvRestaurantWriter
 from ..outbound.glovo_client import GlovoClient
 from .parser import build_parser

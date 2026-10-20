@@ -21,7 +21,8 @@ from ...domain.errors import (
     GlovoError,
 )
 from ...domain import Restaurant
-from .config import Settings, get_settings
+from .config import get_settings
+from .settings import Settings
 
 
 def _normalize(value: str) -> str:

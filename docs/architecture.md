@@ -50,12 +50,16 @@ HTTP, configuration, and file output.
 | `glovo_restaurants/domain/errors.py` | Domain/API error hierarchy. |
 | `glovo_restaurants/application/ports.py` | `RestaurantProvider` and `RestaurantWriter` protocols. |
 | `glovo_restaurants/application/use_cases.py` | `SearchRestaurants` and `ListCuisines` use cases. |
-| `glovo_restaurants/application/search.py` | Search context, pipeline stages, and the default search pipeline. |
-| `glovo_restaurants/application/pipeline.py` | Generic `Pipeline` and `PipelineStep` primitives with no Glovo-specific logic. |
+| `glovo_restaurants/application/search.py` | Pipeline stages and the default search pipeline. |
+| `glovo_restaurants/application/search_context.py` | `SearchContext` dataclass shared by pipeline stages. |
+| `glovo_restaurants/application/pipeline.py` | `Pipeline` dataclass with no Glovo-specific logic. |
+| `glovo_restaurants/application/pipeline_step.py` | `PipelineStep` protocol implemented by stages. |
 | `glovo_restaurants/adapters/inbound/cli.py` | CLI adapter: argument parsing, user-facing messages, and exit codes. |
 | `glovo_restaurants/adapters/inbound/parser.py` | argparse configuration for the CLI adapter. |
 | `glovo_restaurants/adapters/outbound/glovo_client.py` | Glovo HTTP transport: headers, location resolution, pagination, response validation. |
-| `glovo_restaurants/adapters/outbound/config.py` | Typed settings loader and validation for `config.properties`. |
+| `glovo_restaurants/adapters/outbound/config.py` | Properties loading and lookup for `config.properties`. |
+| `glovo_restaurants/adapters/outbound/settings.py` | `Settings` dataclass with validation. |
+| `glovo_restaurants/adapters/outbound/configuration_error.py` | `ConfigurationError` raised by the configuration adapter. |
 | `glovo_restaurants/adapters/outbound/csv_writer.py` | CSV output adapter. |
 | `glovo_restaurants/config.properties` | API endpoints, client identity/version pins, pagination, and CLI defaults. |
 | `glovo_restaurants/__init__.py` | Public package API. Keep this small and stable. |
