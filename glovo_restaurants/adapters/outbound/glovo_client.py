@@ -1,7 +1,7 @@
-"""HTTP transport for Glovo's web endpoints.
+"""Outbound adapter for Glovo's web endpoints.
 
 This module owns request headers, address resolution, pagination, and response
-validation. Search orchestration lives in :mod:`glovo_restaurants.search`.
+validation. Search orchestration lives in the application layer.
 """
 
 from __future__ import annotations
@@ -14,15 +14,14 @@ from typing import Any
 
 import requests
 
-from .config import Settings, get_settings
-from .errors import (
+from ...application.use_cases import SearchRestaurants
+from ...domain.errors import (
     AddressNotFoundError,
     CuisineNotFoundError,
     GlovoError,
 )
-from .models import Restaurant
-from .pipeline import Pipeline
-from .search import SearchContext, build_search_pipeline
+from ...domain.models import Restaurant
+from .config import Settings, get_settings
 
 
 def _normalize(value: str) -> str:
@@ -68,7 +67,6 @@ class GlovoClient:
         self._client_id = str(uuid.uuid4())
         self._cuisines: dict[str, tuple[str, str]] | None = None
         self._location_resolved = False
-        self.search_pipeline: Pipeline[SearchContext] = build_search_pipeline()
 
     def _headers(self) -> dict[str, str]:
         settings = self.settings
@@ -273,17 +271,15 @@ class GlovoClient:
         """Return ranked open restaurants for ``cuisine``.
 
         ``sort_by`` accepts ``distance``, ``rating``, or ``delivery_time``.
-        When omitted, the ``defaults.sort`` setting is used. Orchestration
-        lives in ``search.build_search_pipeline``; this method is only the
-        stable public entry point for callers.
+        When omitted, the ``defaults.sort`` setting is used. This convenience
+        method keeps the historical client API working; new callers should use
+        :class:`~glovo_restaurants.application.use_cases.SearchRestaurants`.
         """
-        context = SearchContext(
-            client=self,
-            cuisine=cuisine,
+        return SearchRestaurants(self).execute(
+            cuisine,
             limit=limit,
             sort_by=sort_by or self.settings.default_sort,
         )
-        return self.search_pipeline.run(context).restaurants
 
     def cuisine_names(self) -> list[str]:
         return sorted(name for name, _ in self.cuisines().values())

@@ -126,10 +126,12 @@ Chicago's Pizza Factory,100,109,Italian,30-40 min,<100m,Free,https://glovoapp.co
 
 ## Architecture
 
-The restaurant lookup is a composable pipeline. `GlovoClient` handles HTTP and
-pagination; the stages in `glovo_restaurants/search.py` resolve the cuisine,
-fetch entries, keep open stores, map them to `Restaurant` objects, rank them,
-and apply the limit. New behaviour should normally be added as a pipeline stage.
+The code uses a hexagonal (ports and adapters) architecture. `GlovoClient` is
+an outbound adapter that handles HTTP and pagination; the application use cases
+drive the composable stages in `glovo_restaurants/application/search.py`, which
+resolve the cuisine, fetch entries, keep open stores, map them to `Restaurant`
+objects, rank them, and apply the limit. New behaviour should normally be added
+as a pipeline stage or a use case, not in an adapter.
 
 See [docs/architecture.md](docs/architecture.md) for the module map, stage
 reference, extension guide, API assumptions, troubleshooting, and maintenance

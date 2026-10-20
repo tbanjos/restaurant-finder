@@ -1,6 +1,6 @@
 import unittest
 
-from glovo_restaurants.models import (
+from glovo_restaurants.domain.models import (
     Restaurant,
     parse_distance,
     parse_eta,

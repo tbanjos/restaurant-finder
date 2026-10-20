@@ -19,7 +19,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Mapping
 
-from .models import SORT_OPTIONS
+from ...domain.models import SORT_OPTIONS
 
 
 class ConfigurationError(RuntimeError):
@@ -27,11 +27,11 @@ class ConfigurationError(RuntimeError):
 
 
 def _config_candidates() -> list[Path]:
-    package_file = Path(__file__).resolve().with_name("config.properties")
-    project_root = Path(__file__).resolve().parent.parent
+    package_root = Path(__file__).resolve().parents[2]
+    project_root = package_root.parent
     return [
         project_root / "config.properties",
-        package_file,
+        package_root / "config.properties",
     ]
 
 

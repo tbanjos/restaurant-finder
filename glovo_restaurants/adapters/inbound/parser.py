@@ -1,12 +1,12 @@
+"""Command-line argument parsing for the inbound CLI adapter."""
+
 from __future__ import annotations
 
 import argparse
-import csv
-import sys
 from pathlib import Path
 
-from .config import get_settings
-from .models import SORT_OPTIONS, Restaurant
+from ...domain.models import SORT_OPTIONS
+from ..outbound.config import get_settings
 
 def _sort_by(value: str) -> str:
     """Normalize a CLI sort option to its internal name."""

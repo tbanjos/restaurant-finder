@@ -1,7 +1,7 @@
 import unittest
 
-from glovo_restaurants.pipeline import Pipeline
-from glovo_restaurants.search import (
+from glovo_restaurants.application.pipeline import Pipeline
+from glovo_restaurants.application.search import (
     SearchContext,
     build_search_pipeline,
     store_is_open,

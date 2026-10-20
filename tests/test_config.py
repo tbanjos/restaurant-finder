@@ -4,8 +4,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from glovo_restaurants.client import GlovoClient
-from glovo_restaurants.config import (
+from glovo_restaurants.adapters.outbound.glovo_client import GlovoClient
+from glovo_restaurants.adapters.outbound.config import (
     ConfigurationError,
     Settings,
     load_settings,

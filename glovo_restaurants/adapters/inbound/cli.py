@@ -1,17 +1,16 @@
-"""Command-line interface and CSV rendering for Glovo restaurant searches."""
+"""Inbound HTTP-free CLI adapter for Glovo restaurant searches."""
 
 from __future__ import annotations
 
-import argparse
-import csv
 import sys
-from pathlib import Path
 
-from .client import GlovoClient
-from .config import ConfigurationError
-from .errors import CuisineNotFoundError, GlovoError
-from .writer import write_csv
+from ...application.use_cases import ListCuisines, SearchRestaurants
+from ...domain.errors import CuisineNotFoundError, GlovoError
+from ..outbound.config import ConfigurationError
+from ..outbound.csv_writer import CsvRestaurantWriter
+from ..outbound.glovo_client import GlovoClient
 from .parser import build_parser
+
 
 def main(argv: list[str] | None = None) -> int:
     """Run the CLI and return a process exit code."""
@@ -35,12 +34,12 @@ def main(argv: list[str] | None = None) -> int:
             address=args.address,
         )
         if args.list_cuisines:
-            for name in client.cuisine_names():
+            for name in ListCuisines(client).execute():
                 print(name)
             return 0
 
         print(f"Fetching {args.cuisine!r} restaurants from Glovo...", file=sys.stderr)
-        restaurants = client.fetch_restaurants(
+        restaurants = SearchRestaurants(client).execute(
             args.cuisine,
             limit=args.limit,
             sort_by=args.sort_by,
@@ -50,7 +49,7 @@ def main(argv: list[str] | None = None) -> int:
             return 1
 
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        write_csv(restaurants, args.output)
+        CsvRestaurantWriter(args.output).write(restaurants)
     except CuisineNotFoundError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 2

@@ -1,3 +1,3 @@
-from .cli import main
+from .adapters.inbound.cli import main
 
 raise SystemExit(main())

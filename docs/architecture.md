@@ -5,10 +5,25 @@ should live, and what to check when Glovo changes its private web API.
 
 ## High-level flow
 
+The code follows a hexagonal (ports and adapters) architecture:
+
+- **Domain** contains the `Restaurant` entity, parsing, ranking, and domain
+  errors. It has no dependency on HTTP, CLI, configuration, or files.
+- **Application** contains use cases, the search pipeline, and the ports that
+  outbound adapters implement.
+- **Adapters** translate between the outside world and the application. The CLI
+  parser is an inbound adapter; the Glovo HTTP client, properties loader, and
+  CSV writer are outbound adapters.
+
+Dependencies point inward: adapters depend on the application and domain, the
+application depends on the domain and its ports, and the domain depends on
+nothing else in the package.
+
 ```text
-cli.main
+adapters.inbound.cli.main
   -> argparse arguments (cuisine, address, city, sort-by, limit, output)
-  -> GlovoClient.fetch_restaurants(...)
+  -> application.use_cases.SearchRestaurants.execute(...)
+       -> RestaurantProvider port (implemented by GlovoClient)
        -> search pipeline
             resolve-cuisine
             build-filters
@@ -17,34 +32,52 @@ cli.main
             build-restaurants
             rank-restaurants (distance | rating | delivery_time)
             limit-results
-  -> cli.write_csv(...)
+  -> adapters.outbound.csv_writer.CsvRestaurantWriter.write(...)
 ```
 
-The pipeline is the core of the application. The CLI owns argument parsing and
-rendering; the client owns HTTP concerns; pipeline stages own data
-transformation.
+The application use cases are the core of the application. The CLI owns
+argument parsing, user-facing messages, and exit codes; outbound adapters own
+HTTP, configuration, and file output.
 
 ## Package layout
 
 | File | Responsibility |
 | --- | --- |
-| `glovo_restaurants/cli.py` | Argument parsing, user-facing messages, CSV output, exit codes. |
-| `glovo_restaurants/client.py` | Glovo HTTP transport: headers, location resolution, pagination, response validation. |
-| `glovo_restaurants/config.py` | Typed settings loader and validation for `config.properties`. |
+| `glovo_restaurants/domain/models/` | Domain models: `Restaurant`, ranking options, parsing helpers, and ranking. |
+| `glovo_restaurants/domain/models/restaurant.py` | `Restaurant` entity and API-to-model mapping. |
+| `glovo_restaurants/domain/models/options.py` | Supported ranking option constants. |
+| `glovo_restaurants/domain/models/parsing.py` | Rating, votes, distance, and ETA parsing helpers. |
+| `glovo_restaurants/domain/models/ranking.py` | `sort_restaurants` ranking strategies. |
+| `glovo_restaurants/domain/errors.py` | Domain/API error hierarchy. |
+| `glovo_restaurants/application/ports.py` | `RestaurantProvider` and `RestaurantWriter` protocols. |
+| `glovo_restaurants/application/use_cases.py` | `SearchRestaurants` and `ListCuisines` use cases. |
+| `glovo_restaurants/application/search.py` | Search context, pipeline stages, and the default search pipeline. |
+| `glovo_restaurants/application/pipeline.py` | Generic `Pipeline` and `PipelineStep` primitives with no Glovo-specific logic. |
+| `glovo_restaurants/adapters/inbound/cli.py` | CLI adapter: argument parsing, user-facing messages, and exit codes. |
+| `glovo_restaurants/adapters/inbound/parser.py` | argparse configuration for the CLI adapter. |
+| `glovo_restaurants/adapters/outbound/glovo_client.py` | Glovo HTTP transport: headers, location resolution, pagination, response validation. |
+| `glovo_restaurants/adapters/outbound/config.py` | Typed settings loader and validation for `config.properties`. |
+| `glovo_restaurants/adapters/outbound/csv_writer.py` | CSV output adapter. |
 | `glovo_restaurants/config.properties` | API endpoints, client identity/version pins, pagination, and CLI defaults. |
-| `glovo_restaurants/search.py` | Search context, pipeline stages, and the default search pipeline. |
-| `glovo_restaurants/pipeline.py` | Generic `Pipeline` and `PipelineStep` primitives with no Glovo-specific logic. |
-| `glovo_restaurants/models/` | Domain models: `Restaurant`, ranking options, parsing helpers, and ranking. |
-| `glovo_restaurants/models/restaurant.py` | `Restaurant` domain class and API-to-model mapping. |
-| `glovo_restaurants/models/options.py` | Supported ranking option constants. |
-| `glovo_restaurants/models/parsing.py` | Rating, votes, distance, and ETA parsing helpers. |
-| `glovo_restaurants/models/ranking.py` | `sort_restaurants` ranking strategies. |
 | `glovo_restaurants/__init__.py` | Public package API. Keep this small and stable. |
 | `tests/` | Unit tests; no live network calls are required. |
 
+## Ports
+
+The application defines its outbound contracts in
+`glovo_restaurants/application/ports.py`:
+
+| Port | Implemented by | Purpose |
+| --- | --- | --- |
+| `RestaurantProvider` | `GlovoClient` | Resolve cuisines and fetch raw store entries. |
+| `RestaurantWriter` | `CsvRestaurantWriter` | Persist ranked restaurants. |
+
+To swap a dependency, implement the matching protocol and inject it into the
+use case or inbound adapter. Application code must not import adapter modules.
+
 ## Pipeline contract
 
-`pipeline.Pipeline` is an immutable ordered sequence of steps:
+`application.pipeline.Pipeline` is an immutable ordered sequence of steps:
 
 ```python
 @dataclass(frozen=True)
@@ -76,7 +109,7 @@ contract narrow makes stages easy to test and reorder.
 
 ## Ranking
 
-`models.sort_restaurants` supports three strategies:
+`domain.models.sort_restaurants` supports three strategies:
 
 | `sort_by` | Ordering |
 | --- | --- |
@@ -129,19 +162,22 @@ Then insert `DropChainsStep()` before `BuildRestaurantsStep()`.
 
 ### Replacing the pipeline
 
-`GlovoClient` stores its pipeline in `search_pipeline`. This is the preferred
+Inject a custom pipeline when constructing the use case. This is the preferred
 seam for tests or embedders:
 
 ```python
-client.search_pipeline = Pipeline(
+pipeline = Pipeline(
     (ResolveCuisineStep(), BuildFiltersStep(), FetchStoreEntriesStep())
 )
+use_case = SearchRestaurants(client, pipeline=pipeline)
+restaurants = use_case.execute("italian")
 ```
 
-## Client responsibilities
+## Glovo HTTP adapter responsibilities
 
-`GlovoClient` is a transport adapter. It should not know about ranking, CSV
-formatting, or user-facing messages. Its jobs are:
+`GlovoClient` is the outbound adapter implementing `RestaurantProvider`. It
+should not know about ranking, CSV formatting, or user-facing messages. Its
+jobs are:
 
 - Build the required `glovo-*` headers.
 - Resolve an optional delivery address to coordinates and a city code.
@@ -160,8 +196,8 @@ Important implementation details:
 ## Glovo API assumptions
 
 These are unofficial web endpoints and can change without notice. Edit
-`glovo_restaurants/config.properties` first; `config.py` validates the values
-and `client.py` consumes them.
+`glovo_restaurants/config.properties` first; the outbound configuration adapter
+validates the values and `GlovoClient` consumes them.
 
 | Property | Purpose |
 | --- | --- |
@@ -200,8 +236,8 @@ When the API changes, verify these areas in order:
 - `AddressNotFoundError`: address lookup succeeded but no geocodable match.
 - `GlovoError`: transport, unexpected response, or address lookup failures.
 
-`ConfigurationError` is raised by `config.py` for missing files, missing keys,
-unparseable values, or invalid defaults. The CLI reports it as a configuration
+`ConfigurationError` is raised by the outbound configuration adapter for
+missing files, missing keys, unparseable values, or invalid defaults. The CLI reports it as a configuration
 error and exits with code `1`.
 
 The CLI maps errors as follows:
@@ -263,7 +299,7 @@ Before merging a change:
 
 ## Configuration resolution
 
-`config.default_config_path()` selects the first available source:
+`adapters.outbound.config.default_config_path()` selects the first available source:
 
 1. `GLOVO_CONFIG` environment variable.
 2. `config.properties` in the current working directory.

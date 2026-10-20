@@ -1,6 +1,7 @@
 import unittest
 
-from glovo_restaurants.client import GlovoClient, GlovoError
+from glovo_restaurants.adapters.outbound.glovo_client import GlovoClient
+from glovo_restaurants.domain.errors import GlovoError
 
 
 def _entry(store_id, title, score, votes, status="OPEN"):

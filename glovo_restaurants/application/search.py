@@ -5,9 +5,9 @@ The pipeline is the application's central data flow:
     resolve cuisine -> build API filters -> fetch entries -> keep open stores
     -> map to models -> rank -> apply limit
 
-``GlovoClient.fetch_restaurants`` is intentionally a thin adapter around this
-module. New behaviour should normally be added as a stage instead of growing
-the client class.
+``SearchRestaurants.execute`` is the application entry point around this
+pipeline. New behaviour should normally be added as a stage instead of growing
+an adapter class.
 """
 
 from __future__ import annotations
@@ -15,18 +15,18 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from .models import DEFAULT_SORT, Restaurant, sort_restaurants
+from ..domain.models import DEFAULT_SORT, Restaurant, sort_restaurants
 from .pipeline import Pipeline
 
 if TYPE_CHECKING:
-    from .client import GlovoClient
+    from .ports import RestaurantProvider
 
 
 @dataclass
 class SearchContext:
     """Mutable state shared by every stage of a restaurant search."""
 
-    client: "GlovoClient"
+    client: "RestaurantProvider"
     cuisine: str
     limit: int | None = 30
     sort_by: str = DEFAULT_SORT
