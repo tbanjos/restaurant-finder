@@ -9,6 +9,12 @@ from .errors import (
 from .client import (
     GlovoClient,
 )
+from .config import (
+    ConfigurationError,
+    Settings,
+    get_settings,
+    load_settings,
+)
 from .models import (
     SORT_OPTIONS,
     Restaurant,
@@ -23,6 +29,7 @@ from .search import SearchContext, build_search_pipeline
 
 __all__ = [
     "AddressNotFoundError",
+    "ConfigurationError",
     "CuisineNotFoundError",
     "GlovoClient",
     "GlovoError",
@@ -31,7 +38,10 @@ __all__ = [
     "Restaurant",
     "SORT_OPTIONS",
     "SearchContext",
+    "Settings",
     "build_search_pipeline",
+    "get_settings",
+    "load_settings",
     "parse_distance",
     "parse_eta",
     "parse_rating",

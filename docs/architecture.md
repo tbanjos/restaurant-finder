@@ -30,6 +30,8 @@ transformation.
 | --- | --- |
 | `glovo_restaurants/cli.py` | Argument parsing, user-facing messages, CSV output, exit codes. |
 | `glovo_restaurants/client.py` | Glovo HTTP transport: headers, location resolution, pagination, response validation. |
+| `glovo_restaurants/config.py` | Typed settings loader and validation for `config.properties`. |
+| `glovo_restaurants/config.properties` | API endpoints, client identity/version pins, pagination, and CLI defaults. |
 | `glovo_restaurants/search.py` | Search context, pipeline stages, and the default search pipeline. |
 | `glovo_restaurants/pipeline.py` | Generic `Pipeline` and `PipelineStep` primitives with no Glovo-specific logic. |
 | `glovo_restaurants/models.py` | `Restaurant` model, API-to-model mapping, parsing helpers, ranking. |
@@ -149,18 +151,22 @@ Important implementation details:
 - `_resolve_location()` runs lazily on the first request. It appends the city
   to the address only when the city is not already present.
 - The address and coordinates are cached for the lifetime of the client.
-- `PAGE_SIZE` controls how many stores are requested per HTTP call.
+- `api.page_size` in `config.properties` controls how many stores are requested per HTTP call.
 
 ## Glovo API assumptions
 
-These are unofficial web endpoints and can change without notice. The
-constants at the top of `client.py` are the first place to check.
+These are unofficial web endpoints and can change without notice. Edit
+`glovo_restaurants/config.properties` first; `config.py` validates the values
+and `client.py` consumes them.
 
-| Constant | Purpose |
+| Property | Purpose |
 | --- | --- |
-| `API_URL` | Store-wall/category endpoint. |
-| `ADDRESS_LOOKUP_URL` | Public address autocomplete/resolution endpoint. |
-| `CLIENT_INFO`, `APP_VERSION`, `API_VERSION` | Spoofed web-client identity headers. |
+| `api.store_wall_url` | Store-wall/category endpoint. |
+| `api.address_lookup_url` | Public address autocomplete/resolution endpoint. |
+| `api.client_info`, `api.app_version`, `api.api_version` | Spoofed web-client identity headers. |
+| `api.request_ttl`, `api.referer`, `api.user_agent` | Request identity/transport headers. |
+| `api.page_size` | Stores requested per pagination call. |
+| `defaults.*` | CLI/client city, country, language, timeout, limit, and sort defaults. |
 
 Request identity headers include device/session/client UUIDs generated per
 client instance and timestamps refreshed per request. The delivery location is
@@ -184,11 +190,15 @@ When the API changes, verify these areas in order:
 
 ## Error handling and exit codes
 
-All application errors derive from `GlovoError`:
+`GlovoError` covers runtime API/search failures:
 
 - `CuisineNotFoundError`: unknown cuisine; includes suggestions when possible.
 - `AddressNotFoundError`: address lookup succeeded but no geocodable match.
 - `GlovoError`: transport, unexpected response, or address lookup failures.
+
+`ConfigurationError` is raised by `config.py` for missing files, missing keys,
+unparseable values, or invalid defaults. The CLI reports it as a configuration
+error and exits with code `1`.
 
 The CLI maps errors as follows:
 
@@ -198,6 +208,7 @@ The CLI maps errors as follows:
 | No restaurants found or Glovo/address failure | `1` |
 | Unknown cuisine | `2` |
 | Invalid arguments | `2` (argparse) |
+| Invalid/missing configuration | `1` |
 
 Branch on exception types, not message text. If a new user-facing failure mode
 is needed, add a `GlovoError` subclass and handle it in `cli.main`.
@@ -215,6 +226,8 @@ Guidelines:
 - Unit tests must not call the live Glovo API.
 - `tests/test_client.py` uses a fake client/session to test pagination, address
   headers, and closed-store filtering.
+- `tests/test_config.py` covers properties parsing, validation, overrides, and
+  client settings wiring.
 - `tests/test_pipeline.py` tests the pipeline contract and the default stage
   composition.
 - `tests/test_models.py` covers rating/votes/distance/ETA parsing and all ranking strategies.
@@ -238,10 +251,24 @@ Before merging a change:
 - [ ] New behaviour is implemented as a pipeline stage, not in the CLI.
 - [ ] HTTP changes stay inside `GlovoClient`.
 - [ ] Public functions/classes have docstrings.
-- [ ] CLI help and `README.md` still describe the current options.
+- [ ] CLI help, `README.md`, and `config.properties` describe the current options.
+- [ ] Version/identity changes are made in `config.properties`, not hard-coded.
 - [ ] Closed-store handling still happens before ranking and limiting.
 - [ ] The default ranking remains closest-first and every `--sort-by` option has a test.
 - [ ] No secrets or personal addresses are committed to fixtures.
+
+## Configuration resolution
+
+`config.default_config_path()` selects the first available source:
+
+1. `GLOVO_CONFIG` environment variable.
+2. `config.properties` in the current working directory.
+3. `config.properties` at the source checkout root.
+4. The packaged `glovo_restaurants/config.properties`.
+
+`get_settings()` caches the result for the process. Tests and embedders that
+need isolated settings should call `load_settings(path)` or pass a `Settings`
+instance to `GlovoClient`.
 
 ## Known limitations
 

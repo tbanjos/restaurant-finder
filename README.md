@@ -73,6 +73,34 @@ Results are ranked closest first by default. Use `--sort-by rating` or
 `--sort-by delivery-time` (also accepted as `--rank-by`) to change the ranking.
 Delivery time uses the midpoint of Glovo's ETA range.
 
+## Configuration
+
+API endpoints, client identity, pagination, and CLI defaults live in
+[`glovo_restaurants/config.properties`](glovo_restaurants/config.properties).
+The root-level `config.properties` is a symlink to that file for convenience.
+
+To override the configuration without editing the package, set `GLOVO_CONFIG`:
+
+```bash
+GLOVO_CONFIG=/etc/glovo-restaurants/config.properties python -m glovo_restaurants --cuisine italian
+```
+
+A `config.properties` in the current working directory also takes precedence
+over the packaged file. The file uses simple `key=value` lines; `#` and `!`
+start comments. Important keys include:
+
+| Key | Purpose |
+| --- | --- |
+| `api.store_wall_url` | Restaurant listing endpoint |
+| `api.address_lookup_url` | Address resolution endpoint |
+| `api.app_version`, `api.api_version` | Glovo web-client version pins |
+| `api.client_info`, `api.user_agent` | Web-client identity headers |
+| `api.page_size` | Stores requested per page |
+| `defaults.city_name`, `defaults.city_code` | Default CLI city |
+| `defaults.timeout` | HTTP timeout in seconds |
+| `defaults.limit` | Default CSV row limit |
+| `defaults.sort` | Default ranking (`distance`, `rating`, or `delivery_time`) |
+
 ## Output
 
 The CSV is UTF-8 with a BOM so it opens correctly in Excel:

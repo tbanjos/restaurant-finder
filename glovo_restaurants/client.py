@@ -14,42 +14,54 @@ from typing import Any
 
 import requests
 
-from .models import DEFAULT_SORT, Restaurant
-from .pipeline import Pipeline
-from .search import SearchContext, build_search_pipeline
-
+from .config import Settings, get_settings
 from .errors import (
     AddressNotFoundError,
     CuisineNotFoundError,
     GlovoError,
 )
+from .models import Restaurant
+from .pipeline import Pipeline
+from .search import SearchContext, build_search_pipeline
 
-API_URL = "https://api.glovoapp.com/v1/web/store_wall/category/1"
-ADDRESS_LOOKUP_URL = "https://api.glovoapp.com/v3/addresslookup/pub/address"
-CLIENT_INFO = "web-customer-web-react/v1.2826.1 project:customer-web"
-APP_VERSION = "v1.2826.1"
-API_VERSION = "14"
-PAGE_SIZE = 50
+
+def _normalize(value: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", value.casefold())
+
 
 class GlovoClient:
     def __init__(
         self,
         *,
-        city_code: str = "bcn",
-        city_name: str = "barcelona",
-        country_code: str = "es",
-        language: str = "en",
+        city_code: str | None = None,
+        city_name: str | None = None,
+        country_code: str | None = None,
+        language: str | None = None,
         address: str | None = None,
-        timeout: float = 30.0,
+        timeout: float | None = None,
+        settings: Settings | None = None,
     ) -> None:
-        self.city_code = city_code
-        self.city_name = city_name
-        self.country_code = country_code
-        self.language = language
+        self.settings = settings or get_settings()
+        self.city_code = (
+            city_code if city_code is not None else self.settings.default_city_code
+        )
+        self.city_name = (
+            city_name if city_name is not None else self.settings.default_city_name
+        )
+        self.country_code = (
+            country_code
+            if country_code is not None
+            else self.settings.default_country_code
+        )
+        self.language = (
+            language if language is not None else self.settings.default_language
+        )
         self.address = address
         self.latitude: float | None = None
         self.longitude: float | None = None
-        self.timeout = timeout
+        self.timeout = (
+            timeout if timeout is not None else self.settings.default_timeout
+        )
         self.session = requests.Session()
         self._device_id = str(uuid.uuid4())
         self._session_id = str(uuid.uuid4())
@@ -59,18 +71,19 @@ class GlovoClient:
         self.search_pipeline: Pipeline[SearchContext] = build_search_pipeline()
 
     def _headers(self) -> dict[str, str]:
+        settings = self.settings
         now = str(int(time.time() * 1000))
         headers = {
             "accept": "application/json, text/plain, */*",
             "accept-language": self.language,
             "content-type": "application/json",
-            "glovo-api-version": API_VERSION,
-            "glovo-app-context": "web",
-            "glovo-app-development-state": "prod",
-            "glovo-app-platform": "web",
-            "glovo-app-type": "customer",
-            "glovo-app-version": APP_VERSION,
-            "glovo-client-info": CLIENT_INFO,
+            "glovo-api-version": settings.api_version,
+            "glovo-app-context": settings.app_context,
+            "glovo-app-development-state": settings.app_development_state,
+            "glovo-app-platform": settings.app_platform,
+            "glovo-app-type": settings.app_type,
+            "glovo-app-version": settings.app_version,
+            "glovo-client-info": settings.client_info,
             "glovo-delivery-location-accuracy": "0",
             "glovo-delivery-location-timestamp": now,
             "glovo-device-urn": f"glv:device:{self._device_id}",
@@ -79,16 +92,13 @@ class GlovoClient:
             "glovo-location-city-code": self.city_code,
             "glovo-location-country-code": self.country_code,
             "glovo-perseus-client-id": self._client_id,
-            "glovo-perseus-consent": "essential",
+            "glovo-perseus-consent": settings.perseus_consent,
             "glovo-perseus-session-id": self._session_id,
             "glovo-perseus-session-timestamp": now,
             "glovo-request-id": str(uuid.uuid4()),
-            "glovo-request-ttl": "7500",
-            "referer": "https://glovoapp.com/",
-            "user-agent": (
-                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-            ),
+            "glovo-request-ttl": settings.request_ttl,
+            "referer": settings.referer,
+            "user-agent": settings.user_agent,
         }
         if self.latitude is not None and self.longitude is not None:
             headers["glovo-delivery-location-latitude"] = str(self.latitude)
@@ -105,7 +115,7 @@ class GlovoClient:
 
         try:
             response = self.session.get(
-                ADDRESS_LOOKUP_URL,
+                self.settings.address_lookup_url,
                 params={"address": query, "allowFallback": "true"},
                 headers=self._headers(),
                 timeout=self.timeout,
@@ -140,7 +150,7 @@ class GlovoClient:
         self,
         *,
         offset: int = 0,
-        limit: int = PAGE_SIZE,
+        limit: int | None = None,
         filters: list[dict[str, Any]] | None = None,
         previous_store_ids: list[str] | None = None,
     ) -> dict[str, Any]:
@@ -152,11 +162,13 @@ class GlovoClient:
 
         try:
             response = self.session.post(
-                API_URL,
+                self.settings.store_wall_url,
                 params={
                     "moduleId": "StoreFeeds",
                     "offset": offset,
-                    "limit": limit,
+                    "limit": (
+                        self.settings.page_size if limit is None else limit
+                    ),
                     "handlingType": "DELIVERY",
                 },
                 headers=self._headers(),
@@ -226,7 +238,7 @@ class GlovoClient:
         while True:
             data = self._post(
                 offset=offset,
-                limit=PAGE_SIZE,
+                limit=self.settings.page_size,
                 filters=filters,
                 previous_store_ids=list(seen_order) or None,
             )
@@ -256,20 +268,20 @@ class GlovoClient:
         cuisine: str,
         *,
         limit: int | None = 30,
-        sort_by: str = DEFAULT_SORT,
+        sort_by: str | None = None,
     ) -> list[Restaurant]:
         """Return ranked open restaurants for ``cuisine``.
 
-        ``sort_by`` accepts ``distance`` (default), ``rating``, or
-        ``delivery_time``. Orchestration lives in
-        ``search.build_search_pipeline``; this method is only the stable public
-        entry point for callers.
+        ``sort_by`` accepts ``distance``, ``rating``, or ``delivery_time``.
+        When omitted, the ``defaults.sort`` setting is used. Orchestration
+        lives in ``search.build_search_pipeline``; this method is only the
+        stable public entry point for callers.
         """
         context = SearchContext(
             client=self,
             cuisine=cuisine,
             limit=limit,
-            sort_by=sort_by,
+            sort_by=sort_by or self.settings.default_sort,
         )
         return self.search_pipeline.run(context).restaurants
 

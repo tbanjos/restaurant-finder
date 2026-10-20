@@ -15,3 +15,6 @@ glovo-restaurants = "glovo_restaurants.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["glovo_restaurants*"]
+
+[tool.setuptools.package-data]
+glovo_restaurants = ["config.properties"]

@@ -7,10 +7,10 @@ import csv
 import sys
 from pathlib import Path
 
-
 from .client import GlovoClient
+from .config import ConfigurationError, get_settings
 from .errors import CuisineNotFoundError, GlovoError
-from .models import DEFAULT_SORT, SORT_OPTIONS, Restaurant
+from .models import SORT_OPTIONS, Restaurant
 
 FIELDS = [
     "name",
@@ -63,12 +63,19 @@ def write_csv(restaurants: list[Restaurant], output: Path) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     """Build the CLI argument parser."""
+    settings = get_settings()
+    ranking_labels = {
+        "distance": "closest",
+        "rating": "highest rated",
+        "delivery_time": "fastest delivery",
+    }
+    default_ranking = ranking_labels.get(settings.default_sort, "closest")
     parser = argparse.ArgumentParser(
         prog="glovo-restaurants",
         description=(
             "Find open Glovo restaurants for a cuisine at a delivery address, "
-            "rank them closest first by default, and write the results to a "
-            "CSV file."
+            f"rank them {default_ranking} first by default, and write the "
+            "results to a CSV file."
         ),
     )
     parser.add_argument(
@@ -90,19 +97,22 @@ def build_parser() -> argparse.ArgumentParser:
         "--rank-by",
         dest="sort_by",
         type=_sort_by,
-        default=DEFAULT_SORT,
+        default=settings.default_sort,
         metavar="{distance,rating,delivery-time}",
         help=(
-            "Ranking strategy: closest first (default), highest rated, or "
-            "fastest delivery."
+            "Ranking strategy: distance, rating, or delivery-time "
+            f"(default: {settings.default_sort.replace('_', '-')})."
         ),
     )
     parser.add_argument(
         "-n",
         "--limit",
         type=int,
-        default=30,
-        help="Maximum number of restaurants to write (default: 30).",
+        default=settings.default_limit,
+        help=(
+            "Maximum number of restaurants to write "
+            f"(default: {settings.default_limit})."
+        ),
     )
     parser.add_argument(
         "-o",
@@ -113,13 +123,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--city",
-        default="barcelona",
-        help="City to search in (default: barcelona).",
+        default=settings.default_city_name,
+        help=f"City to search in (default: {settings.default_city_name}).",
     )
     parser.add_argument(
         "--city-code",
-        default="bcn",
-        help="Glovo city code used by its API (default: bcn).",
+        default=settings.default_city_code,
+        help=(
+            "Glovo city code used by its API "
+            f"(default: {settings.default_city_code})."
+        ),
     )
     parser.add_argument(
         "--list-cuisines",
@@ -131,7 +144,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     """Run the CLI and return a process exit code."""
-    parser = build_parser()
+    try:
+        parser = build_parser()
+    except ConfigurationError as exc:
+        print(f"Configuration error: {exc}", file=sys.stderr)
+        return 1
+
     args = parser.parse_args(argv)
 
     if not args.list_cuisines and not args.cuisine:
@@ -139,12 +157,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.limit < 1:
         parser.error("--limit must be at least 1")
 
-    client = GlovoClient(
-        city_code=args.city_code,
-        city_name=args.city,
-        address=args.address,
-    )
     try:
+        client = GlovoClient(
+            city_code=args.city_code,
+            city_name=args.city,
+            address=args.address,
+        )
         if args.list_cuisines:
             for name in client.cuisine_names():
                 print(name)
@@ -167,6 +185,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     except GlovoError as exc:
         print(f"Error: {exc}", file=sys.stderr)
+        return 1
+    except ConfigurationError as exc:
+        print(f"Configuration error: {exc}", file=sys.stderr)
         return 1
 
     print(
