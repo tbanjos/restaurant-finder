@@ -1,10 +1,13 @@
 """Find Glovo restaurants by cuisine and export them as a ranked CSV."""
 
-from .client import (
+from .errors import (
     AddressNotFoundError,
     CuisineNotFoundError,
-    GlovoClient,
     GlovoError,
+)
+
+from .client import (
+    GlovoClient,
 )
 from .models import (
     SORT_OPTIONS,

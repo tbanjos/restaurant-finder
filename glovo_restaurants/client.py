@@ -18,29 +18,18 @@ from .models import DEFAULT_SORT, Restaurant
 from .pipeline import Pipeline
 from .search import SearchContext, build_search_pipeline
 
+from .errors import (
+    AddressNotFoundError,
+    CuisineNotFoundError,
+    GlovoError,
+)
+
 API_URL = "https://api.glovoapp.com/v1/web/store_wall/category/1"
 ADDRESS_LOOKUP_URL = "https://api.glovoapp.com/v3/addresslookup/pub/address"
 CLIENT_INFO = "web-customer-web-react/v1.2826.1 project:customer-web"
 APP_VERSION = "v1.2826.1"
 API_VERSION = "14"
 PAGE_SIZE = 50
-
-
-class GlovoError(RuntimeError):
-    """Base error for Glovo requests."""
-
-
-class CuisineNotFoundError(GlovoError):
-    """Raised when a cuisine cannot be matched to a Glovo food type."""
-
-
-class AddressNotFoundError(GlovoError):
-    """Raised when a delivery address cannot be located by Glovo."""
-
-
-def _normalize(value: str) -> str:
-    return re.sub(r"[^a-z0-9]", "", value.casefold())
-
 
 class GlovoClient:
     def __init__(

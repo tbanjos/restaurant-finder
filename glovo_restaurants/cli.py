@@ -7,7 +7,9 @@ import csv
 import sys
 from pathlib import Path
 
-from .client import CuisineNotFoundError, GlovoClient, GlovoError
+
+from .client import GlovoClient
+from .errors import CuisineNotFoundError, GlovoError
 from .models import DEFAULT_SORT, SORT_OPTIONS, Restaurant
 
 FIELDS = [
