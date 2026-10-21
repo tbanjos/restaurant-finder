@@ -4,13 +4,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from glovo_restaurants.adapters.outbound.glovo_client import GlovoClient
-from glovo_restaurants.adapters.outbound.config import (
+from restaurants.adapters.outbound.glovo_client import GlovoClient
+from restaurants.adapters.outbound.config import (
     load_settings,
     parse_properties,
 )
-from glovo_restaurants.adapters.outbound.configuration_error import ConfigurationError
-from glovo_restaurants.adapters.outbound.settings import Settings
+from restaurants.adapters.outbound.configuration_error import ConfigurationError
+from restaurants.adapters.outbound.settings import Settings
 
 BASE_PROPERTIES = {
     "api.store_wall_url": "https://example.test/store-wall",
@@ -121,7 +121,7 @@ class LoadSettingsTests(unittest.TestCase):
     def test_packaged_configuration_is_valid(self):
         path = (
             Path(__file__).resolve().parent.parent
-            / "glovo_restaurants"
+            / "restaurants"
             / "config.properties"
         )
 

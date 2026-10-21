@@ -1,9 +1,9 @@
 import unittest
 
-from glovo_restaurants.application.pipeline import Pipeline
-from glovo_restaurants.application.search import build_search_pipeline
-from glovo_restaurants.application.search_context import SearchContext
-from glovo_restaurants.domain import Location, Restaurant
+from restaurants.application.pipeline import Pipeline
+from restaurants.application.search import build_search_pipeline
+from restaurants.application.search_context import SearchContext
+from restaurants.domain import Location, Restaurant
 
 
 class _Step:

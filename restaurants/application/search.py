@@ -7,7 +7,7 @@ The pipeline is the application's central data flow:
 Provider-specific concerns such as cuisine lookup, API filters, availability,
 and response mapping belong to the outbound adapter. New application behaviour
 should normally be added as a stage in
-:mod:`glovo_restaurants.application.steps`.
+:mod:`restaurants.application.steps`.
 """
 
 from __future__ import annotations

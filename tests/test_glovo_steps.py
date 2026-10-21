@@ -1,10 +1,10 @@
 import unittest
 
-from glovo_restaurants.adapters.outbound.glovo_steps import (
+from restaurants.adapters.outbound.glovo_steps import (
     restaurant_from_api,
     store_is_open,
 )
-from glovo_restaurants.domain import Location
+from restaurants.domain import Location
 
 LOCATION = Location(
     city_code="bcn",

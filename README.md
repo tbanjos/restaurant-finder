@@ -31,31 +31,31 @@ pip install -e .
 
 ```bash
 # Top 30 Italian restaurants in Barcelona -> restaurants.csv
-python -m glovo_restaurants --cuisine italian
+python -m restaurants --cuisine italian
 
 # Restaurants near a specific delivery address, closest first
-python -m glovo_restaurants --cuisine italian --address "Carrer de Casp 111"
+python -m restaurants --cuisine italian --address "Carrer de Casp 111"
 
 # Rank by rating instead
-python -m glovo_restaurants --cuisine italian --sort-by rating
+python -m restaurants --cuisine italian --sort-by rating
 
 # Rank by fastest delivery estimate
-python -m glovo_restaurants --cuisine italian --sort-by delivery-time
+python -m restaurants --cuisine italian --sort-by delivery-time
 
 # A different city (the city code can also be supplied explicitly)
-python -m glovo_restaurants --cuisine sushi --city madrid --city-code mad
+python -m restaurants --cuisine sushi --city madrid --city-code mad
 
 # Top 30 sushi restaurants -> sushi.csv
-python -m glovo_restaurants --cuisine sushi --output sushi.csv
+python -m restaurants --cuisine sushi --output sushi.csv
 
 # A cuisine with a space or special characters
-python -m glovo_restaurants --cuisine "gluten free" --output gluten_free.csv
+python -m restaurants --cuisine "gluten free" --output gluten_free.csv
 
 # Change how many rows are written
-python -m glovo_restaurants --cuisine pizza --limit 50
+python -m restaurants --cuisine pizza --limit 50
 
 # Show every cuisine Glovo supports
-python -m glovo_restaurants --list-cuisines
+python -m restaurants --list-cuisines
 ```
 
 If installed with `pip install -e .`, the same options work through the
@@ -76,13 +76,13 @@ Delivery time uses the midpoint of Glovo's ETA range.
 ## Configuration
 
 API endpoints, client identity, pagination, and CLI defaults live in
-[`glovo_restaurants/config.properties`](glovo_restaurants/config.properties).
+[`restaurants/config.properties`](restaurants/config.properties).
 The root-level `config.properties` is a symlink to that file for convenience.
 
 To override the configuration without editing the package, set `GLOVO_CONFIG`:
 
 ```bash
-GLOVO_CONFIG=/etc/glovo-restaurants/config.properties python -m glovo_restaurants --cuisine italian
+GLOVO_CONFIG=/etc/glovo-restaurants/config.properties python -m restaurants --cuisine italian
 ```
 
 A `config.properties` in the current working directory also takes precedence

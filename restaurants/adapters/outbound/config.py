@@ -5,7 +5,7 @@ The packaged ``config.properties`` is the default source. Resolution order is:
 1. ``GLOVO_CONFIG`` environment variable, when set.
 2. ``config.properties`` in the current working directory.
 3. ``config.properties`` next to the project root (source checkouts).
-4. ``config.properties`` packaged with :mod:`glovo_restaurants`.
+4. ``config.properties`` packaged with :mod:`restaurants`.
 
 Keeping configuration out of the client makes API-version bumps and deployment
 overrides possible without editing Python code.

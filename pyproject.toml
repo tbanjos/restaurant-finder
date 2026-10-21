@@ -11,10 +11,10 @@ requires-python = ">=3.10"
 dependencies = ["requests>=2.31,<3"]
 
 [project.scripts]
-glovo-restaurants = "glovo_restaurants.adapters.inbound.cli:main"
+glovo-restaurants = "restaurants.adapters.inbound.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["glovo_restaurants*"]
+include = ["restaurants*"]
 
 [tool.setuptools.package-data]
-glovo_restaurants = ["config.properties"]
+restaurants = ["config.properties"]

@@ -50,37 +50,37 @@ added by implementing `RestaurantProvider` (`location`, `cuisine_names`, and
 
 | File | Responsibility |
 | --- | --- |
-| `glovo_restaurants/domain/restaurant.py` | Provider-neutral `Restaurant` entity. |
-| `glovo_restaurants/domain/location.py` | `Location` value object for delivery address, city, country, language, and coordinates. |
-| `glovo_restaurants/domain/helper/options.py` | Supported ranking option constants. |
-| `glovo_restaurants/domain/helper/parsing.py` | Rating, votes, distance, and ETA parsing helpers. |
-| `glovo_restaurants/domain/helper/ranking.py` | `sort_restaurants` ranking strategies. |
-| `glovo_restaurants/domain/errors.py` | Domain/API error hierarchy. |
-| `glovo_restaurants/application/ports.py` | `RestaurantProvider` and `RestaurantWriter` protocols. |
-| `glovo_restaurants/application/cases/` | One module per use case. |
-| `glovo_restaurants/application/cases/search_restaurants.py` | `SearchRestaurants` use case. |
-| `glovo_restaurants/application/cases/list_cuisines.py` | `ListCuisines` use case. |
-| `glovo_restaurants/application/search.py` | Composition of the provider-neutral search pipeline. |
-| `glovo_restaurants/application/steps/` | Provider-neutral stages: fetch, rank, and limit. |
-| `glovo_restaurants/application/search_context.py` | `SearchContext` dataclass shared by pipeline stages. |
-| `glovo_restaurants/application/pipeline.py` | `Pipeline` dataclass with no Glovo-specific logic. |
-| `glovo_restaurants/application/pipeline_step.py` | `PipelineStep` protocol implemented by stages. |
-| `glovo_restaurants/adapters/inbound/cli.py` | CLI adapter: argument parsing, user-facing messages, and exit codes. |
-| `glovo_restaurants/adapters/inbound/parser.py` | argparse configuration for the CLI adapter. |
-| `glovo_restaurants/adapters/outbound/glovo_client.py` | Glovo `RestaurantProvider`: HTTP transport, location resolution, pagination, and search entry point. |
-| `glovo_restaurants/adapters/outbound/glovo_steps/` | Glovo-specific pipeline: cuisine lookup, API filters, fetching, availability, and response mapping. |
-| `glovo_restaurants/adapters/outbound/config.py` | Properties loading and lookup for `config.properties`. |
-| `glovo_restaurants/adapters/outbound/settings.py` | `Settings` dataclass with validation. |
-| `glovo_restaurants/adapters/outbound/configuration_error.py` | `ConfigurationError` raised by the configuration adapter. |
-| `glovo_restaurants/adapters/outbound/csv_writer.py` | CSV output adapter. |
-| `glovo_restaurants/config.properties` | API endpoints, client identity/version pins, pagination, and CLI defaults. |
-| `glovo_restaurants/__init__.py` | Public package API. Keep this small and stable. |
+| `restaurants/domain/restaurant.py` | Provider-neutral `Restaurant` entity. |
+| `restaurants/domain/location.py` | `Location` value object for delivery address, city, country, language, and coordinates. |
+| `restaurants/domain/helper/options.py` | Supported ranking option constants. |
+| `restaurants/domain/helper/parsing.py` | Rating, votes, distance, and ETA parsing helpers. |
+| `restaurants/domain/helper/ranking.py` | `sort_restaurants` ranking strategies. |
+| `restaurants/domain/errors.py` | Domain/API error hierarchy. |
+| `restaurants/application/ports.py` | `RestaurantProvider` and `RestaurantWriter` protocols. |
+| `restaurants/application/cases/` | One module per use case. |
+| `restaurants/application/cases/search_restaurants.py` | `SearchRestaurants` use case. |
+| `restaurants/application/cases/list_cuisines.py` | `ListCuisines` use case. |
+| `restaurants/application/search.py` | Composition of the provider-neutral search pipeline. |
+| `restaurants/application/steps/` | Provider-neutral stages: fetch, rank, and limit. |
+| `restaurants/application/search_context.py` | `SearchContext` dataclass shared by pipeline stages. |
+| `restaurants/application/pipeline.py` | `Pipeline` dataclass with no Glovo-specific logic. |
+| `restaurants/application/pipeline_step.py` | `PipelineStep` protocol implemented by stages. |
+| `restaurants/adapters/inbound/cli.py` | CLI adapter: argument parsing, user-facing messages, and exit codes. |
+| `restaurants/adapters/inbound/parser.py` | argparse configuration for the CLI adapter. |
+| `restaurants/adapters/outbound/glovo_client.py` | Glovo `RestaurantProvider`: HTTP transport, location resolution, pagination, and search entry point. |
+| `restaurants/adapters/outbound/glovo_steps/` | Glovo-specific pipeline: cuisine lookup, API filters, fetching, availability, and response mapping. |
+| `restaurants/adapters/outbound/config.py` | Properties loading and lookup for `config.properties`. |
+| `restaurants/adapters/outbound/settings.py` | `Settings` dataclass with validation. |
+| `restaurants/adapters/outbound/configuration_error.py` | `ConfigurationError` raised by the configuration adapter. |
+| `restaurants/adapters/outbound/csv_writer.py` | CSV output adapter. |
+| `restaurants/config.properties` | API endpoints, client identity/version pins, pagination, and CLI defaults. |
+| `restaurants/__init__.py` | Public package API. Keep this small and stable. |
 | `tests/` | Unit tests; no live network calls are required. |
 
 ## Ports
 
 The application defines its outbound contracts in
-`glovo_restaurants/application/ports.py`:
+`restaurants/application/ports.py`:
 
 | Port | Implemented by | Purpose |
 | --- | --- | --- |
@@ -229,7 +229,7 @@ Important implementation details:
 ## Glovo API assumptions
 
 These are unofficial web endpoints and can change without notice. Edit
-`glovo_restaurants/config.properties` first; the outbound configuration adapter
+`restaurants/config.properties` first; the outbound configuration adapter
 validates the values and `GlovoClient` consumes them.
 
 | Property | Purpose |
@@ -311,8 +311,8 @@ Guidelines:
 For an occasional live smoke test:
 
 ```bash
-python -m glovo_restaurants --cuisine italian --address "Carrer de Casp 111" --limit 3
-python -m glovo_restaurants --cuisine italian --sort-by delivery-time --limit 3
+python -m restaurants --cuisine italian --address "Carrer de Casp 111" --limit 3
+python -m restaurants --cuisine italian --sort-by delivery-time --limit 3
 ```
 
 Avoid running live requests in a tight loop.
@@ -338,7 +338,7 @@ Before merging a change:
 1. `GLOVO_CONFIG` environment variable.
 2. `config.properties` in the current working directory.
 3. `config.properties` at the source checkout root.
-4. The packaged `glovo_restaurants/config.properties`.
+4. The packaged `restaurants/config.properties`.
 
 `get_settings()` caches the result for the process. Tests and embedders that
 need isolated settings should call `load_settings(path)` or pass a `Settings`

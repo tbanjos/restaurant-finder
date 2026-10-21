@@ -1,8 +1,8 @@
 import unittest
 
-from glovo_restaurants.application.pipeline import Pipeline
-from glovo_restaurants.application.cases import ListCuisines, SearchRestaurants
-from glovo_restaurants.domain import Location, Restaurant
+from restaurants.application.pipeline import Pipeline
+from restaurants.application.cases import ListCuisines, SearchRestaurants
+from restaurants.domain import Location, Restaurant
 
 
 class _Provider:
