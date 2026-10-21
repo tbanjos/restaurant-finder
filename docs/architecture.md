@@ -434,7 +434,7 @@ Guidelines:
 For an occasional live smoke test:
 
 ```bash
-python -m restaurants --cuisine italian --address "Carrer de Casp 111" --limit 3
+python -m restaurants --cuisine italian --address "Calle de Alcalá 50" --limit 3
 python -m restaurants --cuisine italian --sort-by delivery-time --limit 3
 ```
 

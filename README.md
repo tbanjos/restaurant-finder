@@ -11,7 +11,7 @@ that provider.
 
 By default the script:
 
-1. Uses Barcelona as the city and the city center as the delivery location.
+1. Uses Madrid as the city (and city center as the delivery location).
 2. Loads the list of food types the provider exposes for that city.
 3. Finds the food type matching the requested cuisine.
 4. Fetches every open restaurant in that food type, sorted by rating.
@@ -35,11 +35,11 @@ pip install -e .
 ## Usage
 
 ```bash
-# Top 30 Italian restaurants in Barcelona -> restaurants.csv
+# Top 30 Italian restaurants in Madrid -> restaurants.csv
 python -m restaurants --cuisine italian
 
 # Restaurants near a specific delivery address, closest first
-python -m restaurants --cuisine italian --address "Carrer de Casp 111"
+python -m restaurants --cuisine italian --address "Calle de Alcalá 50"
 
 # Rank by rating instead
 python -m restaurants --cuisine italian --sort-by rating
@@ -48,7 +48,7 @@ python -m restaurants --cuisine italian --sort-by rating
 python -m restaurants --cuisine italian --sort-by delivery-time
 
 # A different city (the city code can also be supplied explicitly)
-python -m restaurants --cuisine sushi --city madrid --city-code mad
+python -m restaurants --cuisine sushi --city barcelona --city-code bcn
 
 # Top 30 sushi restaurants -> sushi.csv
 python -m restaurants --cuisine sushi --output sushi.csv
@@ -69,7 +69,7 @@ If installed with `pip install -e .`, the same options work through the
 Cuisine matching ignores case and punctuation, so `Italian`, `italian`, and
 `ITALIAN` all work. A close-match suggestion is shown for typos.
 
-When `--address` is omitted the search uses the selected city (Barcelona by
+When `--address` is omitted the search uses the selected city (Madrid by
 default). When it is supplied, the address is resolved through the provider's
 address lookup and the delivery location is sent with every request. Only
 restaurants whose availability status is `OPEN` are included in the output.
@@ -95,7 +95,7 @@ The default delivery address and city can be supplied through the environment,
 which keeps repeated commands short:
 
 ```bash
-DELIVERY_ADDRESS="Carrer de Casp 111" DELIVERY_CITY=madrid DELIVERY_CITY_CODE=mad \
+DELIVERY_ADDRESS="Calle de Alcalá 50" DELIVERY_CITY=madrid DELIVERY_CITY_CODE=mad \
   python -m restaurants --cuisine sushi
 ```
 

@@ -46,7 +46,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=settings.default_address,
         help=(
             "Delivery address used to filter restaurants, for example "
-            '"Carrer de Casp 111". Defaults to DELIVERY_ADDRESS, then the city '
+            '"Calle de Alcalá 50". Defaults to DELIVERY_ADDRESS, then the city '
             "center."
         ),
     )
