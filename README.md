@@ -148,9 +148,9 @@ availability handling, and response mapping inside its own adapter pipeline. The
 provider-neutral application pipeline then ranks and limits the returned
 `Restaurant` objects.
 
-See [docs/architecture.md](docs/architecture.md) for the module map, stage
-reference, extension guide, API assumptions, troubleshooting, and maintenance
-checklist.
+See [docs/architecture.md](docs/architecture.md) for the system and sequence
+diagrams, module map, stage reference, extension guide, API assumptions,
+troubleshooting, and maintenance checklist.
 
 ## Tests
 

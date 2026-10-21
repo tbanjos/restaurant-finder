@@ -46,6 +46,126 @@ Provider-specific concerns stay inside the adapter. A different provider can be
 added by implementing `RestaurantProvider` (`location`, `cuisine_names`, and
 `find_restaurants`) and injecting it into the same use cases and pipeline.
 
+## System diagram
+
+The diagram shows the runtime components and the direction of calls. The
+application core can be tested with any `RestaurantProvider`; only the outbound
+adapter knows about Glovo's HTTP API.
+
+```mermaid
+flowchart LR
+    user([User]) --> cli["CLI adapter<br/>adapters.inbound.cli.main"]
+
+    subgraph application["Application core"]
+        direction TB
+        search["SearchRestaurants<br/>use case"]
+        list["ListCuisines<br/>use case"]
+        pipeline["Search pipeline<br/>fetch-restaurants<br/>rank-restaurants<br/>limit-results"]
+        port["RestaurantProvider<br/>port"]
+    end
+
+    subgraph adapters["Outbound adapters"]
+        direction TB
+        config["Config adapter<br/>properties + GLOVO_* env"]
+        glovo["GlovoClient<br/>RestaurantProvider"]
+        glovoPipeline["Glovo pipeline<br/>resolve-cuisine<br/>build-filters<br/>fetch-store-entries<br/>filter-open<br/>build-restaurants"]
+        writer["CsvRestaurantWriter"]
+    end
+
+    subgraph external["External systems"]
+        direction TB
+        api[("Glovo web API")]
+        csv[("CSV file")]
+    end
+
+    domain["Domain<br/>Restaurant · Location<br/>ranking · parsing"]
+
+    cli -->|"--list-cuisines"| list
+    cli -->|"search"| search
+    cli -->|"write results"| writer
+    cli -->|"load_settings()"| config
+    cli -->|"construct with Settings"| glovo
+    search --> pipeline
+    pipeline --> port
+    list --> port
+    port --> glovo
+    glovo --> glovoPipeline
+    glovoPipeline -->|"HTTP via _post()"| api
+    glovo --> domain
+    pipeline --> domain
+    writer --> csv
+```
+
+## Search sequence
+
+This traces a normal `--cuisine` search, including optional address resolution,
+pagination, availability filtering, ranking, and CSV output. Address resolution
+runs only once per client and is cached, so it is shown outside the pagination
+loop.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant CLI as CLI adapter
+    participant Config as Config adapter
+    participant UseCase as SearchRestaurants
+    participant Pipeline as Application pipeline
+    participant Client as GlovoClient
+    participant Glovo as Glovo pipeline
+    participant API as Glovo web API
+    participant Writer as CSV writer
+    participant File as CSV file
+
+    User->>CLI: python -m restaurants --cuisine italian
+    CLI->>Config: load_settings()
+    Config-->>CLI: Settings (properties + GLOVO_* overrides)
+    CLI->>CLI: parse arguments and construct GlovoClient
+    CLI->>UseCase: execute(cuisine, limit, sort_by)
+    UseCase->>Pipeline: run(SearchContext)
+    Pipeline->>Client: find_restaurants(cuisine)
+    Client->>Glovo: run(GlovoSearchContext)
+    Glovo->>Client: resolve_cuisine(cuisine)
+
+    opt --address supplied and not resolved yet
+        Client->>API: GET address lookup
+        API-->>Client: addresses[] (latitude, longitude, cityCode)
+    end
+
+    opt Cuisine filters are not cached yet
+        Client->>API: POST store wall (limit=1)
+        API-->>Client: filters (ADMIN_FILTERS food types)
+    end
+
+    Glovo->>Client: fetch_store_entries(filters)
+
+    loop Until a page adds no new store ids
+        Client->>API: POST store wall (offset, previousStoreIds)
+        API-->>Client: data.stores.entries
+    end
+
+    Glovo->>Glovo: filter-open (availability.status == OPEN)
+    Glovo->>Glovo: build-restaurants (map to domain models)
+    Glovo-->>Client: list[Restaurant]
+    Client-->>Pipeline: list[Restaurant]
+    Pipeline->>Pipeline: rank-restaurants, then limit-results
+    Pipeline-->>UseCase: context.restaurants
+    UseCase-->>CLI: list[Restaurant]
+
+    alt No open restaurants
+        CLI-->>User: error message, exit 1
+    else Results found
+        CLI->>Writer: write(restaurants)
+        Writer->>File: UTF-8 CSV with BOM
+        CLI-->>User: "Wrote N restaurants", exit 0
+    end
+```
+
+Availability is time-sensitive: only stores whose `availability.status` is
+`OPEN` leave the Glovo pipeline, so result counts naturally vary by hour. Update
+both diagrams whenever a stage is added, removed, or reordered in
+`build_search_pipeline()` or `build_glovo_pipeline()`.
+
 ## Package layout
 
 | File | Responsibility |
