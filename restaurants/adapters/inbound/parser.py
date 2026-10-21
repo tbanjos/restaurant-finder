@@ -28,9 +28,9 @@ def build_parser() -> argparse.ArgumentParser:
     }
     default_ranking = ranking_labels.get(settings.default_sort, "closest")
     parser = argparse.ArgumentParser(
-        prog="glovo-restaurants",
+        prog="restaurant-finder",
         description=(
-            "Find open Glovo restaurants for a cuisine at a delivery address, "
+            "Find open restaurants for a cuisine at a delivery address, "
             f"rank them {default_ranking} first by default, and write the "
             "results to a CSV file."
         ),
@@ -46,7 +46,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=settings.default_address,
         help=(
             "Delivery address used to filter restaurants, for example "
-            '"Carrer de Casp 111". Defaults to GLOVO_ADDRESS, then the city '
+            '"Carrer de Casp 111". Defaults to DELIVERY_ADDRESS, then the city '
             "center."
         ),
     )
@@ -88,7 +88,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--city-code",
         default=settings.default_city_code,
         help=(
-            "Glovo city code used by its API "
+            "Provider city code used by its API "
             f"(default: {settings.default_city_code})."
         ),
     )

@@ -1,4 +1,4 @@
-"""Parsing helpers for values displayed by Glovo's store listings."""
+"""Parsing helpers for values displayed by provider store listings."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ _NUMBER = r"(\d+(?:[.,]\d+)?)"
 
 
 def parse_rating(value: str | None) -> float | None:
-    """Parse a Glovo rating such as ``"96%"`` into ``96.0``."""
+    """Parse a provider rating such as ``"96%"`` into ``96.0``."""
     if not value:
         return None
     match = _RATING_RE.search(value)
@@ -34,7 +34,7 @@ def parse_votes(value: str | None) -> int:
 
 
 def parse_distance(value: str | None) -> float | None:
-    """Parse a Glovo distance such as ``"<100m"`` or ``"1.5km"`` into meters."""
+    """Parse a provider distance such as ``"<100m"`` or ``"1.5km"`` into meters."""
     if not value:
         return None
     match = _DISTANCE_RE.search(value)

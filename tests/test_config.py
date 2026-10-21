@@ -141,9 +141,9 @@ class EnvironmentDefaultsTests(unittest.TestCase):
             path = Path(directory) / "config.properties"
             path.write_text(_properties_text(), encoding="utf-8")
             environment = {
-                "GLOVO_ADDRESS": "Carrer de Casp 111",
-                "GLOVO_CITY": "Madrid",
-                "GLOVO_CITY_CODE": "mad",
+                "DELIVERY_ADDRESS": "Carrer de Casp 111",
+                "DELIVERY_CITY": "Madrid",
+                "DELIVERY_CITY_CODE": "mad",
             }
             with patch.dict(os.environ, environment, clear=False):
                 settings = load_settings(path)
@@ -154,9 +154,9 @@ class EnvironmentDefaultsTests(unittest.TestCase):
 
     def test_parser_uses_environment_defaults(self):
         environment = {
-            "GLOVO_ADDRESS": "Carrer de Casp 111",
-            "GLOVO_CITY": "Madrid",
-            "GLOVO_CITY_CODE": "mad",
+            "DELIVERY_ADDRESS": "Carrer de Casp 111",
+            "DELIVERY_CITY": "Madrid",
+            "DELIVERY_CITY_CODE": "mad",
         }
         with patch.dict(os.environ, environment, clear=False):
             args = build_parser().parse_args(["--cuisine", "italian"])
@@ -167,9 +167,9 @@ class EnvironmentDefaultsTests(unittest.TestCase):
 
     def test_cli_flags_override_environment_defaults(self):
         environment = {
-            "GLOVO_ADDRESS": "Carrer de Casp 111",
-            "GLOVO_CITY": "Madrid",
-            "GLOVO_CITY_CODE": "mad",
+            "DELIVERY_ADDRESS": "Carrer de Casp 111",
+            "DELIVERY_CITY": "Madrid",
+            "DELIVERY_CITY_CODE": "mad",
         }
         with patch.dict(os.environ, environment, clear=False):
             args = build_parser().parse_args(

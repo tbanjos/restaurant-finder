@@ -2,7 +2,7 @@
 
 The application core depends on these protocols rather than on HTTP, CSV, or
 configuration details. Adapters supply concrete implementations at composition
-time, so providers other than Glovo only need to implement this interface.
+time, so a new provider only needs to implement this interface.
 """
 
 from __future__ import annotations

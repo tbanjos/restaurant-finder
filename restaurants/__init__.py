@@ -1,9 +1,9 @@
-"""Find Glovo restaurants by cuisine and export them as a ranked CSV."""
+"""Find restaurants by cuisine and export them as a ranked CSV."""
 
 from .domain.errors import (
     AddressNotFoundError,
     CuisineNotFoundError,
-    GlovoError,
+    ProviderError,
 )
 from .domain import (
     SORT_OPTIONS,
@@ -25,7 +25,6 @@ from .adapters.inbound.cli import main
 from .adapters.outbound.config import get_settings, load_settings
 from .adapters.outbound.configuration_error import ConfigurationError
 from .adapters.outbound.csv_writer import CsvRestaurantWriter
-from .adapters.outbound.glovo_client import GlovoClient
 from .adapters.outbound.settings import Settings
 
 __all__ = [
@@ -33,12 +32,11 @@ __all__ = [
     "ConfigurationError",
     "CsvRestaurantWriter",
     "CuisineNotFoundError",
-    "GlovoClient",
-    "GlovoError",
     "ListCuisines",
     "Location",
     "Pipeline",
     "PipelineStep",
+    "ProviderError",
     "Restaurant",
     "RestaurantProvider",
     "RestaurantWriter",

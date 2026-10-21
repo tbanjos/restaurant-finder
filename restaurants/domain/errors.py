@@ -1,10 +1,10 @@
-class GlovoError(RuntimeError):
-    """Base error for Glovo requests."""
+class ProviderError(RuntimeError):
+    """Base error for restaurant-provider requests."""
 
 
-class CuisineNotFoundError(GlovoError):
-    """Raised when a cuisine cannot be matched to a Glovo food type."""
+class CuisineNotFoundError(ProviderError):
+    """Raised when a cuisine cannot be matched to a provider food type."""
 
 
-class AddressNotFoundError(GlovoError):
-    """Raised when a delivery address cannot be located by Glovo."""
+class AddressNotFoundError(ProviderError):
+    """Raised when a delivery address cannot be located by a provider."""

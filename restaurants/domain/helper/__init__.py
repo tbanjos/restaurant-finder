@@ -1,4 +1,4 @@
-"""Domain helpers for ranking and parsing Glovo display values."""
+"""Domain helpers for ranking and parsing provider display values."""
 
 from .options import (
     DEFAULT_SORT,

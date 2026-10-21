@@ -21,9 +21,9 @@ from .configuration_error import ConfigurationError
 from .settings import Settings
 
 _ENVIRONMENT_DEFAULTS = {
-    "default_address": ("GLOVO_ADDRESS", "GLOVO_DEFAULT_ADDRESS"),
-    "default_city_name": ("GLOVO_CITY", "GLOVO_DEFAULT_CITY"),
-    "default_city_code": ("GLOVO_CITY_CODE", "GLOVO_DEFAULT_CITY_CODE"),
+    "default_address": ("DELIVERY_ADDRESS", "GLOVO_DEFAULT_ADDRESS"),
+    "default_city_name": ("DELIVERY_CITY", "GLOVO_DEFAULT_CITY"),
+    "default_city_code": ("DELIVERY_CITY_CODE", "GLOVO_DEFAULT_CITY_CODE"),
 }
 
 

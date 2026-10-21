@@ -1,6 +1,6 @@
 """Domain layer: entities, value objects, helpers, and domain errors."""
 
-from .errors import AddressNotFoundError, CuisineNotFoundError, GlovoError
+from .errors import AddressNotFoundError, CuisineNotFoundError, ProviderError
 from .location import Location
 from .helper import (
     DEFAULT_SORT,
@@ -20,8 +20,8 @@ __all__ = [
     "AddressNotFoundError",
     "CuisineNotFoundError",
     "DEFAULT_SORT",
-    "GlovoError",
     "Location",
+    "ProviderError",
     "Restaurant",
     "SORT_DELIVERY_TIME",
     "SORT_DISTANCE",

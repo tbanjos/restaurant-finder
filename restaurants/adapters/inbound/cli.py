@@ -1,14 +1,14 @@
-"""Inbound HTTP-free CLI adapter for Glovo restaurant searches."""
+"""Inbound HTTP-free CLI adapter for restaurant searches."""
 
 from __future__ import annotations
 
 import sys
 
 from ...application.cases import ListCuisines, SearchRestaurants
-from ...domain.errors import CuisineNotFoundError, GlovoError
+from ...domain.errors import CuisineNotFoundError, ProviderError
 from ..outbound.configuration_error import ConfigurationError
 from ..outbound.csv_writer import CsvRestaurantWriter
-from ..outbound.glovo_client import GlovoClient
+from ..outbound.provider import build_provider
 from .parser import build_parser
 
 
@@ -28,7 +28,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--limit must be at least 1")
 
     try:
-        client = GlovoClient(
+        client = build_provider(
             city_code=args.city_code,
             city_name=args.city,
             address=args.address,
@@ -38,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(name)
             return 0
 
-        print(f"Fetching {args.cuisine!r} restaurants from Glovo...", file=sys.stderr)
+        print(f"Fetching {args.cuisine!r} restaurants...", file=sys.stderr)
         restaurants = SearchRestaurants(client).execute(
             args.cuisine,
             limit=args.limit,
@@ -53,7 +53,7 @@ def main(argv: list[str] | None = None) -> int:
     except CuisineNotFoundError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 2
-    except GlovoError as exc:
+    except ProviderError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
     except ConfigurationError as exc:

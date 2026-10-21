@@ -20,7 +20,7 @@ from ...domain import Location, Restaurant
 from ...domain.errors import (
     AddressNotFoundError,
     CuisineNotFoundError,
-    GlovoError,
+    ProviderError,
 )
 from .config import get_settings
 from .glovo_steps import GlovoSearchContext, build_glovo_pipeline
@@ -136,7 +136,7 @@ class GlovoClient:
             response.raise_for_status()
             addresses = response.json().get("addresses") or []
         except (requests.RequestException, ValueError, AttributeError) as exc:
-            raise GlovoError(f"Could not look up address '{query}': {exc}") from exc
+            raise ProviderError(f"Could not look up address '{query}': {exc}") from exc
 
         match = next(
             (
@@ -199,15 +199,15 @@ class GlovoClient:
             )
             response.raise_for_status()
         except requests.RequestException as exc:
-            raise GlovoError(f"Glovo request failed: {exc}") from exc
+            raise ProviderError(f"Provider request failed: {exc}") from exc
 
         try:
             data = response.json()["data"]
         except (ValueError, KeyError, TypeError) as exc:
-            raise GlovoError("Glovo returned an unexpected response") from exc
+            raise ProviderError("Provider returned an unexpected response") from exc
 
         if not isinstance(data, dict):
-            raise GlovoError("Glovo returned an unexpected response")
+            raise ProviderError("Provider returned an unexpected response")
         return data
 
     def cuisines(self) -> dict[str, tuple[str, str]]:
@@ -223,7 +223,7 @@ class GlovoClient:
                 if name and filter_id:
                     cuisines[_normalize(name)] = (name, str(filter_id))
             if not cuisines:
-                raise GlovoError("Could not load the cuisine list from Glovo")
+                raise ProviderError("Could not load the cuisine list from the provider")
             self._cuisines = cuisines
         return self._cuisines
 

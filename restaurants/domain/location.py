@@ -1,4 +1,4 @@
-"""Delivery location data used for Glovo requests."""
+"""Delivery location data used for provider requests."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Location:
-    """A delivery location and its resolved Glovo metadata."""
+    """A delivery location and its provider-resolved metadata."""
 
     city_code: str
     city_name: str

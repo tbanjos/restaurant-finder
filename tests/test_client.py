@@ -2,7 +2,7 @@ import unittest
 
 from restaurants.adapters.outbound.glovo_client import GlovoClient
 from restaurants.application.cases import SearchRestaurants
-from restaurants.domain.errors import GlovoError
+from restaurants.domain.errors import ProviderError
 
 
 def _entry(store_id, title, score, votes, status="OPEN"):
@@ -125,7 +125,7 @@ class AddressLookupTests(unittest.TestCase):
         client = GlovoClient(address="Nowhere")
         client.session = _FakeSession({"addresses": []})
 
-        with self.assertRaises(GlovoError):
+        with self.assertRaises(ProviderError):
             client._resolve_location()
 
     def test_no_address_keeps_default_location(self):

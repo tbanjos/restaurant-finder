@@ -23,10 +23,10 @@ class Restaurant:
 
     @property
     def distance_meters(self) -> float | None:
-        """Distance in meters, when Glovo provides a parseable value."""
+        """Distance in meters, when the provider supplies a parseable value."""
         return parse_distance(self.distance)
 
     @property
     def eta_minutes(self) -> float | None:
-        """Delivery estimate in minutes, when Glovo provides a parseable value."""
+        """Delivery estimate in minutes, when the provider supplies a parseable value."""
         return parse_eta(self.eta)
