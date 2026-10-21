@@ -43,10 +43,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-a",
         "--address",
-        default=None,
+        default=settings.default_address,
         help=(
             "Delivery address used to filter restaurants, for example "
-            '"Carrer de Casp 111". Defaults to the city center.'
+            '"Carrer de Casp 111". Defaults to GLOVO_ADDRESS, then the city '
+            "center."
         ),
     )
     parser.add_argument(

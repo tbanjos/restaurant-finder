@@ -340,9 +340,12 @@ Before merging a change:
 3. `config.properties` at the source checkout root.
 4. The packaged `restaurants/config.properties`.
 
-`get_settings()` caches the result for the process. Tests and embedders that
-need isolated settings should call `load_settings(path)` or pass a `Settings`
-instance to `GlovoClient`.
+`load_settings()` then applies the `GLOVO_ADDRESS`, `GLOVO_CITY`, and
+`GLOVO_CITY_CODE` environment variables (plus `GLOVO_DEFAULT_*` aliases) on
+top of the properties file. `get_settings()` reloads this resolved
+configuration on each call. Tests and embedders that need isolated settings
+should call `load_settings(path)` or pass a `Settings` instance to
+`GlovoClient`.
 
 ## Known limitations
 

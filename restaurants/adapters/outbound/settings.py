@@ -60,6 +60,7 @@ class Settings:
     default_timeout: float
     default_limit: int
     default_sort: str
+    default_address: str | None = None
     source: Path | None = None
 
     @classmethod
@@ -123,5 +124,6 @@ class Settings:
             default_timeout=default_timeout,
             default_limit=default_limit,
             default_sort=default_sort,
+            default_address=properties.get("defaults.address") or None,
             source=Path(source) if source is not None else None,
         )

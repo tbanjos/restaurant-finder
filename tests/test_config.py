@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from restaurants.adapters.inbound.parser import build_parser
 from restaurants.adapters.outbound.glovo_client import GlovoClient
 from restaurants.adapters.outbound.config import (
     load_settings,
@@ -132,6 +133,61 @@ class LoadSettingsTests(unittest.TestCase):
             "https://api.glovoapp.com/v1/web/store_wall/category/1",
         )
         self.assertGreater(settings.page_size, 0)
+
+
+class EnvironmentDefaultsTests(unittest.TestCase):
+    def test_load_settings_reads_address_and_city_from_environment(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "config.properties"
+            path.write_text(_properties_text(), encoding="utf-8")
+            environment = {
+                "GLOVO_ADDRESS": "Carrer de Casp 111",
+                "GLOVO_CITY": "Madrid",
+                "GLOVO_CITY_CODE": "mad",
+            }
+            with patch.dict(os.environ, environment, clear=False):
+                settings = load_settings(path)
+
+        self.assertEqual(settings.default_address, "Carrer de Casp 111")
+        self.assertEqual(settings.default_city_name, "Madrid")
+        self.assertEqual(settings.default_city_code, "mad")
+
+    def test_parser_uses_environment_defaults(self):
+        environment = {
+            "GLOVO_ADDRESS": "Carrer de Casp 111",
+            "GLOVO_CITY": "Madrid",
+            "GLOVO_CITY_CODE": "mad",
+        }
+        with patch.dict(os.environ, environment, clear=False):
+            args = build_parser().parse_args(["--cuisine", "italian"])
+
+        self.assertEqual(args.address, "Carrer de Casp 111")
+        self.assertEqual(args.city, "Madrid")
+        self.assertEqual(args.city_code, "mad")
+
+    def test_cli_flags_override_environment_defaults(self):
+        environment = {
+            "GLOVO_ADDRESS": "Carrer de Casp 111",
+            "GLOVO_CITY": "Madrid",
+            "GLOVO_CITY_CODE": "mad",
+        }
+        with patch.dict(os.environ, environment, clear=False):
+            args = build_parser().parse_args(
+                [
+                    "--cuisine",
+                    "italian",
+                    "--address",
+                    "Gran Via 1",
+                    "--city",
+                    "Barcelona",
+                    "--city-code",
+                    "bcn",
+                ]
+            )
+
+        self.assertEqual(args.address, "Gran Via 1")
+        self.assertEqual(args.city, "Barcelona")
+        self.assertEqual(args.city_code, "bcn")
 
 
 class ClientSettingsTests(unittest.TestCase):

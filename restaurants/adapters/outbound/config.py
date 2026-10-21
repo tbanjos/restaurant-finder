@@ -14,11 +14,17 @@ overrides possible without editing Python code.
 from __future__ import annotations
 
 import os
-from functools import lru_cache
+from dataclasses import replace
 from pathlib import Path
 
 from .configuration_error import ConfigurationError
 from .settings import Settings
+
+_ENVIRONMENT_DEFAULTS = {
+    "default_address": ("GLOVO_ADDRESS", "GLOVO_DEFAULT_ADDRESS"),
+    "default_city_name": ("GLOVO_CITY", "GLOVO_DEFAULT_CITY"),
+    "default_city_code": ("GLOVO_CITY_CODE", "GLOVO_DEFAULT_CITY_CODE"),
+}
 
 
 def _config_candidates() -> list[Path]:
@@ -77,6 +83,18 @@ def parse_properties(text: str, *, source: str = "<properties>") -> dict[str, st
     return values
 
 
+def _with_environment_defaults(settings: Settings) -> Settings:
+    """Apply address and city defaults from the environment."""
+    overrides = {}
+    for field, names in _ENVIRONMENT_DEFAULTS.items():
+        for name in names:
+            value = os.environ.get(name)
+            if value is not None and value.strip():
+                overrides[field] = value.strip()
+                break
+    return replace(settings, **overrides) if overrides else settings
+
+
 def load_settings(path: str | Path | None = None) -> Settings:
     """Load settings from ``path`` or the default properties file."""
     config_path = Path(path).expanduser() if path is not None else default_config_path()
@@ -86,13 +104,13 @@ def load_settings(path: str | Path | None = None) -> Settings:
         raise ConfigurationError(
             f"Could not read configuration file {config_path}: {exc}"
         ) from exc
-    return Settings.from_properties(
+    settings = Settings.from_properties(
         parse_properties(text, source=str(config_path)),
         source=config_path,
     )
+    return _with_environment_defaults(settings)
 
 
-@lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    """Return the process-wide default settings."""
+    """Return the default settings, including environment overrides."""
     return load_settings()

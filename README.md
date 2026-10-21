@@ -85,6 +85,19 @@ To override the configuration without editing the package, set `GLOVO_CONFIG`:
 GLOVO_CONFIG=/etc/glovo-restaurants/config.properties python -m restaurants --cuisine italian
 ```
 
+The default delivery address and city can be supplied through the environment,
+which keeps repeated commands short:
+
+```bash
+GLOVO_ADDRESS="Carrer de Casp 111" GLOVO_CITY=madrid GLOVO_CITY_CODE=mad \
+  python -m restaurants --cuisine sushi
+```
+
+`GLOVO_ADDRESS`, `GLOVO_CITY`, and `GLOVO_CITY_CODE` override the properties
+file. Explicit `--address`, `--city`, and `--city-code` flags still take
+precedence. The aliases `GLOVO_DEFAULT_ADDRESS`, `GLOVO_DEFAULT_CITY`, and
+`GLOVO_DEFAULT_CITY_CODE` are also accepted.
+
 A `config.properties` in the current working directory also takes precedence
 over the packaged file. The file uses simple `key=value` lines; `#` and `!`
 start comments. Important keys include:
@@ -97,6 +110,7 @@ start comments. Important keys include:
 | `api.client_info`, `api.user_agent` | Web-client identity headers |
 | `api.page_size` | Stores requested per page |
 | `defaults.city_name`, `defaults.city_code` | Default CLI city |
+| `defaults.address` | Optional default delivery address |
 | `defaults.timeout` | HTTP timeout in seconds |
 | `defaults.limit` | Default CSV row limit |
 | `defaults.sort` | Default ranking (`distance`, `rating`, or `delivery_time`) |
